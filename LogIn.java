@@ -2,227 +2,642 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.io.*;
 
 public class LogIn {
     // Private member variables
     private JFrame frame;
-    private JFrame frame3;
     private Edit editBtn;
-    private JTextField textField,textField2,textField3,textField4,textField5;
+    private JTextField signInEmailField, emailField, nameField, surnameField, workplaceField, townField;
+    private JPasswordField signInPasswordField, passwordField, confirmPasswordField;
     private MyGraph graph;
     private userProfile profile;
+    private JLabel errorLabel, nameErrorLabel, signInEmailError, signInPasswordError, emailErrorLabel, passwordErrorLabel, workplaceErrorLabel, townErrorLabel;
+    private JPanel signUpPanel1, signUpPanel2; // Panels for sign up steps
+    private boolean isSignUpMode = false;
 
-    /**
-     * Constructor for the LogIn class.
-     * Initializes the member variables and creates a new MyGraph object.
-     */
-    public LogIn() {
-        graph = new MyGraph();
-        textField = new JTextField();
-        textField2 = new JTextField();
-        textField3 = new JTextField();
-        textField4 = new JTextField();
-        textField5 = new JTextField();
-        editBtn = new Edit(graph);
-    }
-
-    public static void main(String[] args)
-    {
+    public static void main(String[] args) {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         LogIn panelsDemo = new LogIn();
         panelsDemo.run();
     }
 
-    /**
-     * Runs the application by creating a new frame and adding the main panel to it.
-     * Also reads data from a file and sets the frame to be visible.
-     */
     public void run(){
         File file;
         file = new File(graph);
         file.readFromAFile();
         frame = new JFrame("Convo");
-        frame.setSize(600, 400);
+        frame.setSize(900, 730);
+        frame.getRootPane().setBorder(BorderFactory.createLineBorder(new Color(147, 112, 219), 2));
         editBtn.WindowExit(frame);
         mainPanel();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
-    /**
-     * Creates the main panel for the application.
-     * Includes a welcome message, text field for user ID, and sign up/sign in buttons.
-     */
+    private JButton createStyledButton(String text) {
+        return editBtn.createStyledButton(text);
+    }
+
     public void mainPanel() {
-        JPanel topPanel = new JPanel();
+        // Create main panel with sleek dark theme background
+        JPanel mainPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                // Modern gradient with deep purple to dark gray
+                GradientPaint gradient = new GradientPaint(
+                        0, 0, new Color(25, 25, 35), // Dark background at top
+                        0, getHeight(), new Color(45, 45, 60) // Slightly lighter at bottom
+                );
+                g2d.setPaint(gradient);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        mainPanel.setLayout(new BorderLayout(30, 30));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
 
-        // Create a welcome message and add it to the top panel
-        JLabel label = new JLabel("Welcome To Convo");
-        label.setFont(new Font("Serif", Font.PLAIN, 50));
-        label.setAlignmentX(Component.CENTER_ALIGNMENT);
-        topPanel.add(label);
+        // Minimalist header panel
+        JPanel headerPanel = new JPanel(new BorderLayout(0, 15));
+        headerPanel.setOpaque(false);
 
-        // Create a text panel with a user ID text field and add it to the top panel
-        topPanel.add(createTextPanel());
+        // Modern logo design
+        JLabel logoLabel = new JLabel("CONVO");
+        logoLabel.setFont(new Font("Poppins", Font.BOLD, 72)); // Changed to Poppins font
+        logoLabel.setForeground(new Color(147, 112, 219)); // Modern purple
+        logoLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-        // Create sign up and sign in buttons
-        JButton btn1 = new JButton("Sign Up");
-        JButton btn2 = new JButton("Sign In");
-        editBtn.btnSmall(btn1,btn2);
+        // Subtle glow effect
+        logoLabel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createEmptyBorder(0, 0, 5, 0),
+                BorderFactory.createEmptyBorder(2, 2, 2, 2)
+        ));
 
-        // Add action listeners to the buttons
-        btn1.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    // If the sign up button is clicked, clear the text fields and display the registration panel
-                    if(e.getSource() == btn1){
-                        textField2.setText(null);
-                        textField3.setText(null);
-                        textField4.setText(null);
-                        textField5.setText(null);
-                        firstButton();
-                        frame.dispose();
+        // Smooth fade-in animation
+        Timer fadeTimer = new Timer(30, new ActionListener() {
+            float alpha = 0;
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                alpha += 0.03;
+                if (alpha > 1) {
+                    alpha = 1;
+                    ((Timer)e.getSource()).stop();
+                }
+                logoLabel.setForeground(new Color(147, 112, 219, (int)(alpha * 255)));
+                logoLabel.repaint();
+            }
+        });
+        fadeTimer.start();
+
+        // Minimalist tagline
+        JLabel subtitleLabel = new JLabel("Find Friends • Create Connections • Explore Profiles");
+        subtitleLabel.setFont(new Font("Poppins", Font.PLAIN, 24));
+        subtitleLabel.setForeground(new Color(180, 180, 200)); // Soft light color
+        subtitleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        headerPanel.add(logoLabel, BorderLayout.CENTER);
+        headerPanel.add(subtitleLabel, BorderLayout.SOUTH);
+
+        // Card panel setup
+        JPanel cardPanel = new JPanel(new CardLayout());
+        cardPanel.setOpaque(false);
+
+        // Initialize panels
+        JPanel loginPanel = createLoginPanel();
+        signUpPanel1 = createSignUpPanel1();
+        signUpPanel2 = createSignUpPanel2();
+
+        cardPanel.add(loginPanel, "login");
+        cardPanel.add(signUpPanel1, "signup1");
+        cardPanel.add(signUpPanel2, "signup2");
+
+        // Modern button panel
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 30, 20));
+        buttonPanel.setOpaque(false);
+
+        // Sleek button styling
+        JButton signUpBtn = createStyledButton("Sign Up");
+        JButton signInBtn = createStyledButton("Sign In");
+        JButton nextBtn = createStyledButton("Next");
+
+        signUpBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                CardLayout cl = (CardLayout) cardPanel.getLayout();
+                if (!isSignUpMode) {
+                    cl.show(cardPanel, "signup1");
+                    signUpBtn.setText("Back");
+                    signInBtn.setVisible(false);
+                    nextBtn.setVisible(true);
+                    nextBtn.setText("Next");
+                    isSignUpMode = true;
+                } else {
+                    cl.show(cardPanel, "login");
+                    signUpBtn.setText("Sign Up");
+                    signInBtn.setVisible(true);
+                    nextBtn.setVisible(false);
+                    isSignUpMode = false;
+                    clearFields();
+                }
+            }
+        });
+
+        nextBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (nextBtn.getText().equals("Next")) {
+                    if (validateSignUpPage1()) {
+                        CardLayout cl = (CardLayout) cardPanel.getLayout();
+                        cl.show(cardPanel, "signup2");
+                        nextBtn.setText("Register");
+                        signUpBtn.setText("Back");
+                    }
+                } else if (nextBtn.getText().equals("Register")) {
+                    int ID = validateSignUpPage2();
+                    if (ID != -1) {
+                        friendSuggestion friendSuggestion = new friendSuggestion(ID,graph);
+                        friendSuggestion.suggestion();
                     }
                 }
-            });
-        btn2.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    // If the sign in button is clicked, check if the user ID exists and display the appropriate panel
-                    if(e.getSource() == btn2) {
-                        char check = 'c';
-                        int ID = 0;
-                        try {
-                            ID = Integer.parseInt(textField.getText());
-                            check = graph.specialCheck(ID);
-                        } catch (NumberFormatException nfe) {
-                            //
-                        }
-                        if (check == 'a') {
-                            friendSuggestion friendSuggestion = new friendSuggestion(ID,graph);
-                            friendSuggestion.suggestion();
-                            frame.dispose();
-                        } else if(check == 'b'){
-                            profile = new userProfile(ID,graph);
-                            profile.display(true);
-                            frame.dispose();
-                        }else{
-                            // If the user ID doesn't exist, display an error message
-                            editBtn.popUpRandom(new JLabel("No User Found"));
-                        }
+            }
+        });
+
+        signInBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                handleSignIn();
+            }
+        });
+
+        buttonPanel.add(signUpBtn);
+        buttonPanel.add(signInBtn);
+        buttonPanel.add(nextBtn);
+        nextBtn.setVisible(false);
+
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
+        mainPanel.add(cardPanel, BorderLayout.CENTER);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        frame.add(mainPanel);
+    }
+
+    private void handleSignIn() {
+        String email = signInEmailField.getText().trim();
+        String password = new String(signInPasswordField.getPassword());
+
+        // Reset all error labels
+        signInEmailError.setVisible(false);
+        signInPasswordError.setVisible(false);
+        errorLabel.setVisible(false);
+
+        // Validate empty fields
+        boolean hasError = false;
+        if (email.isEmpty()) {
+            editBtn.showError(signInEmailError, "Please enter your email");
+            hasError = true;
+        }
+        if (password.isEmpty()) {
+            editBtn.showError(signInPasswordError, "Please enter your password");
+            hasError = true;
+        }
+        if (hasError) {
+            return;
+        }
+
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader("Check.txt"));
+            String line;
+            boolean credentialsFound = false;
+            int ID = 0;
+
+            while ((line = reader.readLine()) != null) {
+                // Find first two commas to split email and ID
+                int firstComma = line.indexOf(',');
+                int secondComma = line.indexOf(',', firstComma + 1);
+
+                if (firstComma != -1 && secondComma != -1) {
+                    String fileEmail = line.substring(0, firstComma);
+                    String fileID = line.substring(firstComma + 1, secondComma);
+                    // Get remaining string as password (may contain commas)
+                    String filePassword = line.substring(secondComma + 1);
+
+                    if (email.equals(fileEmail) && password.equals(filePassword)) {
+                        ID = Integer.parseInt(fileID);
+                        credentialsFound = true;
+                        break;
                     }
                 }
-            });
+            }
+            reader.close();
 
-        JPanel btnPanel = new JPanel();
-        btnPanel.add(btn1);
-        btnPanel.add(btn2);
-        btnPanel.setBackground(Color.lightGray);
-        // Add the sign up and sign in buttons to the top panel
-        topPanel.add(btnPanel);
-        topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.Y_AXIS));
-        topPanel.setBackground(Color.PINK);
-        topPanel.add(Box.createVerticalGlue());
-        frame.add(topPanel, BorderLayout.CENTER);
+            if (!credentialsFound) {
+                signInPasswordError.setVisible(true);
+                editBtn.showError(signInPasswordError, "Invalid email or password");
+                return;
+            }
 
+            // Check user exists and credentials
+            char check = graph.specialCheck(ID);
+            if (check == 'c') {
+                signInPasswordError.setVisible(true);
+                editBtn.showError(signInPasswordError, "No user found with this ID");
+                return;
+            }
+
+            // Successful login
+            if (check == 'a') {
+                friendSuggestion friendSuggestion = new friendSuggestion(ID, graph);
+                friendSuggestion.suggestion();
+                frame.dispose();
+            } else if (check == 'b') {
+                profile = new userProfile(ID, graph);
+                profile.display(true);
+                frame.dispose();
+            }
+
+        } catch (IOException e) {
+            signInPasswordError.setVisible(true);
+            editBtn.showError(signInPasswordError, "Error reading credentials file");
+            e.printStackTrace();
+        } catch (NumberFormatException e) {
+            signInPasswordError.setVisible(true);
+            editBtn.showError(signInPasswordError, "Invalid ID format in credentials file");
+            e.printStackTrace();
+        }
+    }
+
+    private void clearFields() {
+        signInEmailField.setText("");
+        signInPasswordField.setText("");
+        emailField.setText("");
+        nameField.setText("");
+        surnameField.setText("");
+        workplaceField.setText("");
+        townField.setText("");
+        passwordField.setText("");
+        confirmPasswordField.setText("");
+        errorLabel.setVisible(false);
+        workplaceErrorLabel.setVisible(false);
+        townErrorLabel.setVisible(false);
+        nameErrorLabel.setVisible(false);
+        emailErrorLabel.setVisible(false);
+        passwordErrorLabel.setVisible(false);
+        signInPasswordError.setVisible(false);
+        signInEmailError.setVisible(false);
     }
 
     /**
-     * Creates a panel with a user ID text field.
-     * @return The text panel with a user ID text field.
+     * Constructor for the LogIn class.
+     * Initializes the member variables and creates a new MyGraph object.
      */
-    public JPanel createTextPanel() {
-        JPanel textPanel = new JPanel();
-        JLabel textLabel = new JLabel("User ID");
-        textLabel.setFont(new Font("Serif", Font.PLAIN, 30));
+    public LogIn() {
+        // Initialize text fields with custom styling
+        graph = new MyGraph();
+        editBtn = new Edit(graph);
 
-        textField.setFont(new Font("Serif", Font.PLAIN, 30));
-        textField.setPreferredSize(new Dimension(300, 50));
 
-        textPanel.add(textLabel);
-        textPanel.add(textField);
-        textPanel.setLayout(new FlowLayout(FlowLayout.CENTER , 50, 50));
-        textPanel.setBackground(Color.lightGray);
-        return textPanel;
+        signInEmailField = editBtn.createStyledTextField();
+        signInPasswordField = editBtn.createStyledPasswordField();
+        emailField = editBtn.createStyledTextField();
+        nameField = editBtn.createStyledTextField();
+        surnameField = editBtn.createStyledTextField();
+        workplaceField = editBtn.createStyledTextField();
+        townField = editBtn.createStyledTextField();
+        passwordField = editBtn.createStyledPasswordField();
+        confirmPasswordField = editBtn.createStyledPasswordField();
+
+        // Initialize error labels with red text
+        errorLabel = editBtn.createErrorLabel();
+
+        nameErrorLabel = editBtn.createErrorLabel();
+
+        emailErrorLabel = editBtn.createErrorLabel();
+
+        signInEmailError = editBtn.createErrorLabel();
+
+        signInPasswordError = editBtn.createErrorLabel();
+
+        passwordErrorLabel = editBtn.createErrorLabel();
+
+        workplaceErrorLabel = editBtn.createErrorLabel();
+        townErrorLabel = editBtn.createErrorLabel();
     }
 
-    /**
-     * Handles the action of the "First" button by creating a new frame, registering a user
-     * and providing a way to go back to the previous frame.
-     */
-    public void firstButton(){
-        JButton btn3 = new JButton("Back"); // Create a new button labeled "Back"
-        JButton btn4 = new JButton("Register"); // Create a new button labeled "Register"
-        frame3 = new JFrame("Convo"); // Create a new frame with title "Convo"
-        editBtn.WindowExit(frame3); // Set the properties of the new frame
+    private void styleLabel(JLabel label) {
+        editBtn.styleLabel(label);
+    }
 
-        // Register a user by taking user input and validating it
-        editBtn.registration(textField2,textField3,textField4,textField5,frame3,btn3,btn4,"Registration",true);
+    private JPanel createLoginPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setOpaque(false);
+        panel.setBorder(BorderFactory.createEmptyBorder(40, 0, 0, 0));
 
-        // Add an action listener to the "Back" button to dispose of the current frame and display the previous one
-        btn3.addActionListener(new ActionListener()
-            {
-                @Override
-                public void actionPerformed(ActionEvent e)
-                {
-                    if(e.getSource() == btn3){
-                        frame3.dispose(); // Dispose of the current frame
-                        textField.setText(""); // Clear a text field
-                        frame.setVisible(true); // Display the previous frame
+        // Email Field with modern styling
+        JLabel emailLabel = new JLabel("Enter Email");
+        styleLabel(emailLabel);
+        signInEmailField.setMaximumSize(new Dimension(400, 50));
+
+        // Password Field with enhanced styling
+        JLabel passwordLabel = new JLabel("Enter Password");
+        styleLabel(passwordLabel);
+        signInPasswordField.setMaximumSize(new Dimension(400, 50));
+        signInPasswordField.setEchoChar('•');
+
+        // Error panels with improved visibility
+        JPanel emailErrorPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        emailErrorPanel.setOpaque(false);
+        emailErrorPanel.setMaximumSize(new Dimension(400, 30));
+        emailErrorPanel.add(signInEmailError);
+
+        JPanel passwordErrorPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        passwordErrorPanel.setOpaque(false);
+        passwordErrorPanel.setMaximumSize(new Dimension(400, 30));
+        passwordErrorPanel.add(signInPasswordError);
+
+
+
+        // Add components with improved spacing
+        panel.add(emailLabel);
+        panel.add(Box.createVerticalStrut(8));
+        panel.add(signInEmailField);
+        panel.add(Box.createVerticalStrut(0));
+        panel.add(emailErrorPanel);
+        panel.add(Box.createVerticalStrut(15));
+
+        panel.add(passwordLabel);
+        panel.add(Box.createVerticalStrut(8));
+        panel.add(signInPasswordField);
+        panel.add(Box.createVerticalStrut(0));
+        panel.add(passwordErrorPanel);
+
+        return panel;
+    }
+
+
+    private JPanel createSignUpPanel1() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setOpaque(false);
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
+
+        // Name and Surname in horizontal layout
+        JPanel namePanel = new JPanel();
+        namePanel.setLayout(new BoxLayout(namePanel, BoxLayout.X_AXIS));
+        namePanel.setOpaque(false);
+        namePanel.setMaximumSize(new Dimension(400, 70));
+
+        JPanel leftPanel = new JPanel();
+        leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
+        leftPanel.setOpaque(false);
+
+        JPanel rightPanel = new JPanel();
+        rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
+        rightPanel.setOpaque(false);
+
+        JLabel nameLabel = new JLabel("Name");
+        styleLabel(nameLabel);
+        nameField.setMaximumSize(new Dimension(195, 60));
+
+        JLabel surnameLabel = new JLabel("Surname");
+        styleLabel(surnameLabel);
+        surnameField.setMaximumSize(new Dimension(195, 50));
+
+        leftPanel.add(nameLabel);
+        leftPanel.add(Box.createVerticalStrut(5));
+        leftPanel.add(nameField);
+
+        rightPanel.add(surnameLabel);
+        rightPanel.add(Box.createVerticalStrut(5));
+        rightPanel.add(surnameField);
+
+        namePanel.add(leftPanel);
+        namePanel.add(Box.createHorizontalStrut(10));
+        namePanel.add(rightPanel);
+        panel.add(namePanel);
+
+        // Create error panels with FlowLayout
+        JPanel nameErrorPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        nameErrorPanel.setOpaque(false);
+        nameErrorPanel.setMaximumSize(new Dimension(350, 20));
+        nameErrorPanel.add(nameErrorLabel);
+        panel.add(nameErrorPanel);
+
+        // Add workplace and town fields with error labels
+        JLabel workplaceLabel = new JLabel("Workplace");
+        styleLabel(workplaceLabel);
+        workplaceField.setMaximumSize(new Dimension(400, 50));
+
+        JLabel townLabel = new JLabel("Town");
+        styleLabel(townLabel);
+        townField.setMaximumSize(new Dimension(400, 50));
+
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(workplaceLabel);
+        panel.add(Box.createVerticalStrut(5));
+        panel.add(workplaceField);
+
+        JPanel workplaceErrorPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        workplaceErrorPanel.setOpaque(false);
+        workplaceErrorPanel.setMaximumSize(new Dimension(350, 20));
+        workplaceErrorPanel.add(workplaceErrorLabel);
+        panel.add(workplaceErrorPanel);
+
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(townLabel);
+        panel.add(Box.createVerticalStrut(5));
+        panel.add(townField);
+
+        JPanel townErrorPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        townErrorPanel.setOpaque(false);
+        townErrorPanel.setMaximumSize(new Dimension(350, 20));
+        townErrorPanel.add(townErrorLabel);
+        panel.add(townErrorPanel);
+
+        return panel;
+    }
+
+    private JPanel createSignUpPanel2() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setOpaque(false);
+        panel.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
+
+        // Email field
+        JLabel emailLabel = new JLabel("Email");
+        styleLabel(emailLabel);
+        emailField.setMaximumSize(new Dimension(400, 50));
+
+        // Password fields
+        JLabel passwordLabel = new JLabel("New Password");
+        styleLabel(passwordLabel);
+        passwordField = editBtn.createStyledPasswordField();
+        passwordField.setMaximumSize(new Dimension(400, 50));
+        passwordField.setEchoChar('•');
+
+        JLabel confirmLabel = new JLabel("Confirm Password");
+        styleLabel(confirmLabel);
+        confirmPasswordField = editBtn.createStyledPasswordField();
+        confirmPasswordField.setMaximumSize(new Dimension(400, 50));
+        confirmPasswordField.setEchoChar('•');
+
+        // Error panels
+        JPanel emailErrorPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        emailErrorPanel.setOpaque(false);
+        emailErrorPanel.setMaximumSize(new Dimension(350, 20));
+        emailErrorPanel.add(emailErrorLabel);
+
+        JPanel passwordErrorPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        passwordErrorPanel.setOpaque(false);
+        passwordErrorPanel.setMaximumSize(new Dimension(350, 20));
+        passwordErrorPanel.add(passwordErrorLabel);
+
+        // Add components to main panel
+        panel.add(emailLabel);
+        panel.add(Box.createVerticalStrut(5));
+        panel.add(emailField);
+        panel.add(Box.createVerticalStrut(5));
+        panel.add(emailErrorPanel);
+        panel.add(Box.createVerticalStrut(5));
+
+        panel.add(passwordLabel);
+        panel.add(Box.createVerticalStrut(5));
+        panel.add(passwordField);
+        panel.add(Box.createVerticalStrut(30));
+
+        panel.add(confirmLabel);
+        panel.add(Box.createVerticalStrut(5));
+        panel.add(confirmPasswordField);
+        panel.add(Box.createVerticalStrut(5));
+        panel.add(passwordErrorPanel);
+
+        return panel;
+    }
+
+    private boolean validateSignUpPage1() {
+        boolean isValid = true;
+        // Validate name and surname
+        if (nameField.getText().trim().isEmpty() || surnameField.getText().trim().isEmpty()) {
+            editBtn.showError(nameErrorLabel, "Name and surname are required");
+            isValid = false;
+        } else {
+            nameErrorLabel.setVisible(false);
+        }
+
+        // Validate workplace
+        if (workplaceField.getText().trim().isEmpty()) {
+            editBtn.showError(workplaceErrorLabel, "Workplace is required");
+            isValid = false;
+        } else {
+            workplaceErrorLabel.setVisible(false);
+        }
+
+        // Validate town
+        if (townField.getText().trim().isEmpty()) {
+            editBtn.showError(townErrorLabel, "Town is required");
+            isValid = false;
+        } else {
+            townErrorLabel.setVisible(false);
+        }
+
+        return isValid;
+    }
+
+    private int validateSignUpPage2() {
+        boolean isValid = true;
+
+        // Email validation
+        String email = emailField.getText().trim();
+        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
+        if (email.isEmpty()) {
+            editBtn.showError(emailErrorLabel, "Email address is required");
+            isValid = false;
+        } else if (!email.matches(emailRegex)) {
+            editBtn.showError(emailErrorLabel, "Please enter a valid email address");
+            isValid = false;
+        } else {
+            emailErrorLabel.setVisible(false);
+        }
+
+        // Password validation
+        String password = new String(passwordField.getPassword());
+        String confirmPass = new String(confirmPasswordField.getPassword());
+
+        if (password.isEmpty()) {
+            editBtn.showError(passwordErrorLabel, "Password is required");
+            isValid = false;
+        } else if (password.length() < 8) {
+            editBtn.showError(passwordErrorLabel, "Password must be at least 8 characters long");
+            isValid = false;
+        } else if (!password.matches(".*[A-Z].*")) {
+            editBtn.showError(passwordErrorLabel, "Password must contain at least one uppercase letter");
+            isValid = false;
+        } else if (!password.matches(".*[a-z].*")) {
+            editBtn.showError(passwordErrorLabel, "Password must contain at least one lowercase letter");
+            isValid = false;
+        } else if (!password.matches(".*\\d.*")) {
+            editBtn.showError(passwordErrorLabel, "Password must contain at least one number");
+            isValid = false;
+        } else if (!password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?].*")) {
+            editBtn.showError(passwordErrorLabel, "Password must contain at least one special character");
+            isValid = false;
+        } else if (!password.equals(confirmPass)) {
+            editBtn.showError(passwordErrorLabel, "Passwords do not match");
+            isValid = false;
+        } else {
+            passwordErrorLabel.setVisible(false);
+        }
+
+        if(isValid){
+            try {
+                // Check if email already exists
+                BufferedReader reader = new BufferedReader(new FileReader("Check.txt"));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String[] parts = line.split(",");
+                    if (parts[0].equals(email)) {
+                        passwordErrorLabel.setVisible(true);
+                        editBtn.showError(passwordErrorLabel, "Email already exists");
+                        reader.close();
+                        return -1;
                     }
                 }
-            });
+                reader.close();
 
-        // Add an action listener to the "Register" button to register the user if the input is valid
-        btn4.addActionListener(new ActionListener()
-            {
-                @Override
-                public void actionPerformed(ActionEvent e)
-                {
-                    if(e.getSource() == btn4){
-                        char ch = editBtn.inputValidation(textField2,textField3,textField4,textField5,true); // Validate the user input
-                        if (ch == 'a'){
-                            int id = Integer.parseInt(textField2.getText()); // Get the user ID from the input field
-                            String name = capital(textField3.getText()); // Get the user name from the input field and capitalize the first letter
-                            String work = capital(textField4.getText()); // Get the user workplace from the input field and capitalize the first letter
-                            String home = capital(textField5.getText()); // Get the user home from the input field and capitalize the first letter
-
-                            // Add the user to the graph
-                            graph.addUser(id,name,work,home,"","");
-
-                            JButton btn = new JButton("Back"); // Create a new button labeled "Back"
-                            JFrame ram = new JFrame("Registered"); // Create a new frame with title "Registered"
-                            editBtn.popUp(btn,ram,new JLabel("Registration Successful"),300); // Set the properties of the new frame
-
-                            // Add an action listener to the "Back" button to dispose of the current frame and display the previous one
-                            btn.addActionListener(new ActionListener() {
-                                    @Override
-                                    public void actionPerformed(ActionEvent e) {
-                                        ram.dispose(); // Dispose of the current frame
-                                        frame3.dispose(); // Dispose of the previous frame
-                                        frame.setVisible(true); // Display the previous frame
-                                    }
-                                });
-                            ram.setVisible(true); // Display the new frame
-                        } else if (ch == 'b') {
-                            editBtn.popUpRandom(new JLabel("Use Different ID")); // Display an error message if the user ID already exists
-                        }else {
-                            editBtn.popUpRandom(new JLabel("Incorrect Information")); // Display an error message if the user input is incorrect
-                        }
+                // Find largest user ID from graph
+                int maxId = 0;
+                for (UserDetails user : graph.getUsers()) {
+                    int userId = user.getID();  // Assuming getId() is a method in UserDetails that returns the user ID
+                    if (userId > maxId) {
+                        maxId = userId;
                     }
                 }
-            });
+                int id = maxId + 1;
 
-        frame3.setVisible(true);
+                // Write new user to Check.txt
+                BufferedWriter writer = new BufferedWriter(new FileWriter("Check.txt", true));
+                writer.newLine();
+                writer.write(email + "," + id + "," + password);
+                writer.close();
+
+                // Add user to graph
+                String fullName = nameField.getText() + " " + surnameField.getText();
+                graph.addUser(id, fullName, workplaceField.getText(), townField.getText(), "", "");
+
+                return id;
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                return -1;
+            }
+        }else
+            return -1;
     }
-
-    /**
-     * Capitalizes the first letter of a string.
-     * @param str the string to be capitalized
-     * @return the capitalized string
-     */
-    public String capital(String str){
-        String capitalizedStr = Character.toUpperCase(str.charAt(0)) + str.substring(1);
-        return capitalizedStr;
-    }
-
 }

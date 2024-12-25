@@ -1,3 +1,4 @@
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
@@ -5,11 +6,14 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.Objects;
 import java.util.Stack;
-
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 /**
  * The userProfile class represents the user profile and contains the user details, such as name, ID, workplace, and hometown.
  * It provides methods to display the user profile, add buttons, and set button actions.
@@ -90,109 +94,163 @@ public class userProfile {
      * This method creates a GUI window and displays it with given panel, buttons and image based on the boolean value of "boo".
      * @param boo boolean that determines whether to display the user's home page or friend's page
      */
-    public void display(boolean boo){
-        // Create a new JFrame window with a title "Convo" and set its size to 800x600
+    public void display(boolean boo) {
+        // Create main frame
         frame = new JFrame("Convo");
-        frame.setSize(800, 600);
-        // Center the JFrame window on the screen
+        frame.setSize(900, 730);
         frame.setLocationRelativeTo(null);
-        // Exit the window when the user clicks the "x" button
         editBtn.WindowExit(frame);
 
-        // Create a new JPanel called "panel"
-        JPanel panel;
-        // If "boo" is true, set "panel" to display the "Home" panel created by the editBtn object.
-        if(boo) {
-            panel = editBtn.panel("Home");
-        }else{
-            // Otherwise, set "panel" to display the "Friends Page" panel created by the editBtn object.
-            panel = editBtn.panel("Friends Page");
-        }
+        // Create main panel with gradient background
+        JPanel mainPanel = editBtn.panel("");
+        mainPanel.setLayout(new BorderLayout());
 
-        JPanel panel2 = new JPanel();
-        panel2.setLayout(new BorderLayout());
+        // Create navigation bar panel - now transparent
+        JPanel navBar = new JPanel();
+        navBar.setLayout(new GridLayout(1, 3));
+        navBar.setOpaque(false);  // Make nav bar transparent
+        navBar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 0, editBtn.accentColor));
 
-        // Add buttons to the top of "panel2" based on the boolean value of "boo".
-        panel2.add(buttons(boo), BorderLayout.NORTH);
-
-        // Create a new JPanel called "imagee" and add an image to it based on the boolean value of "boo".
-        imagee = image(new JPanel(),boo);
-
-        panel2.add(imagee, BorderLayout.CENTER);
-
-        panel.add(panel2);
-
-        // Add "panel" to the JFrame window.
-        frame.add(panel);
-
-        // Make the JFrame window visible.
-        frame.setVisible(true);
-    }
-
-    /**
-     * Creates a panel with two buttons and adds action listeners to them.
-     * @param boo a boolean value indicating whether the user is on the "Home" page or "Friends Page".
-     * @return a JPanel object containing two buttons and an action listener for each button.
-     */
-    public JPanel buttons(boolean boo){
-        // Create two JButtons with respective names and apply styling
+        // Create and style buttons
         but1 = new JButton(name1);
         JButton btn2 = new JButton(name2);
-        editBtn.btn(but1,btn2);
+        editBtn.btn(but1, btn2);
 
-        // Add action listener to first button
+        // Apply modern button styling
+        for (JButton btn : new JButton[]{but1, btn2}) {
+            btn.setFont(new Font("Poppins", Font.BOLD, 16));
+            btn.setForeground(editBtn.textColor);
+            btn.setOpaque(false);
+            btn.setContentAreaFilled(false);
+            btn.setBorderPainted(false);
+            btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+            // Add hover effect
+            btn.addMouseListener(new java.awt.event.MouseAdapter() {
+                public void mouseEntered(java.awt.event.MouseEvent evt) {
+                    btn.setForeground(editBtn.accentColor);
+                }
+                public void mouseExited(java.awt.event.MouseEvent evt) {
+                    btn.setForeground(editBtn.textColor);
+                }
+            });
+        }
+
+        // Add button action listeners
         but1.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    if(e.getSource() == but1) {
-                        // Create new JFrame for profile page and set size and location
-                        frame2 = new JFrame("Convo");
-                        frame2.setSize(800, 600);
-                        frame2.setLocationRelativeTo(null);
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (e.getSource() == but1) {
+                    frame2 = new JFrame("Convo");
+                    frame2.setSize(900, 730);
+                    frame2.setLocationRelativeTo(null);
 
-                        // Create panel for profile page and add necessary components
-                        JPanel panel = new JPanel();
-                        panel = editBtn.panel("Profile");
-                        panel.add(btn1(boo));
+                    JPanel panel = editBtn.panel("Profile");
+                    panel.add(btn1(boo));
+                    panel.setOpaque(false);
 
-                        // Add panel to JFrame and dispose of previous frame
-                        frame2.add(panel);
-                        frame.dispose();
+                    frame2.add(panel);
+                    frame2.setVisible(false);
+
+                    // Use invokeLater to handle frame switching
+                    SwingUtilities.invokeLater(() -> {
                         frame2.setVisible(true);
-                    }
-                }
-            });
-
-        // Add action listener to second button
-        btn2.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    if(e.getSource() == btn2){
-                        if(boo) {
-                            Friends friend = new Friends(id, frame, btn2,graph);
-                            friend.run(true);
-                        }else {
-                            Friends friend = new Friends(id, homePage, btn2,frame,userID,graph);
-                            friend.run(false);
-                        }
-
                         frame.dispose();
+                    });
+                }
+            }
+        });
+
+        btn2.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (e.getSource() == btn2) {
+                    if (boo) {
+                        Friends friend = new Friends(id, frame, btn2, graph);
+                        friend.run(true);
+                    } else {
+                        Friends friend = new Friends(id, homePage, btn2, frame, userID, graph);
+                        friend.run(false);
                     }
+                    frame.dispose();
+                }
+            }
+        });
+
+        // Left section - name1 button
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        leftPanel.setOpaque(false);  // Make panel transparent
+        leftPanel.add(but1);
+
+        // Center section - title
+        JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        centerPanel.setOpaque(false);  // Make panel transparent
+        JLabel titleLabel = new JLabel(boo ? "Home" : "Friends Page");
+        titleLabel.setFont(new Font("Poppins", Font.BOLD, 24));
+        if (boo)
+            titleLabel.setPreferredSize(new Dimension(75, 50));
+        else
+            titleLabel.setPreferredSize(new Dimension(175, 50));
+
+        titleLabel.setForeground(editBtn.textColor);
+        centerPanel.add(titleLabel);
+
+        // Right section - name2 button
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        rightPanel.setOpaque(false);  // Make panel transparent
+        rightPanel.add(btn2);
+
+        // Add panels to nav bar
+        navBar.add(leftPanel);
+        navBar.add(centerPanel);
+        navBar.add(rightPanel);
+
+        // Create content panel
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        contentPanel.setOpaque(false);
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+
+        // Create and add image panel
+        imagee = image(new JPanel(), boo);
+        imagee.setAlignmentX(Component.CENTER_ALIGNMENT);
+        contentPanel.add(imagee);
+
+        if (!boo) {
+            JPanel buttonPanel = new JPanel();
+            buttonPanel.setOpaque(false);
+
+            JButton backButton = editBtn.createStyledButton("Back");
+            JButton homeButton = editBtn.createStyledButton("Home");
+
+            backButton.addActionListener(e -> {
+                if(e.getSource() == backButton) {
+                    frame.dispose();
+                    backFrame.setVisible(true);
                 }
             });
-        ButtonGroup group = new ButtonGroup();
-        group.add(but1);
-        group.add(btn2);
 
-        JPanel btnpanel = new JPanel();
-        btnpanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        btnpanel.add(but1);
-        btnpanel.add(btn2);
+            homeButton.addActionListener(e -> {
+                if(e.getSource() == homeButton) {
+                    frame.dispose();
+                    homePage.setVisible(true);
+                }
+            });
 
-        btnpanel.setBackground(Color.green);
-        return btnpanel;
+            buttonPanel.add(backButton);
+            buttonPanel.add(Box.createHorizontalStrut(20));
+            buttonPanel.add(homeButton);
+
+            mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+        }
+
+        // Add components to main panel
+        mainPanel.add(navBar, BorderLayout.NORTH);
+        mainPanel.add(contentPanel, BorderLayout.CENTER);
+
+        frame.add(mainPanel);
+        frame.setVisible(true);
     }
-
     /**
      * Creates a JPanel which displays user details including name, ID, work place and hometown. If the boolean argument 'boo'
      * is true, then an "Edit" button and "Back" button are added to the panel. When the button is clicked, a registration form pops up which allows the user
@@ -201,178 +259,142 @@ public class userProfile {
      * @param boo a boolean value which determines whether or not an "Edit" button is displayed on the panel.
      * @return a JPanel which displays user details and a "Back" button or an "Edit" button.
      */
-    public JPanel btn1(boolean boo){
+    public JPanel btn1(boolean boo) {
         JPanel main = new JPanel();
-
-        //Creating panels to hold text and labels
-        JPanel textPanel = new JPanel();
-        JPanel textPanel2 = new JPanel();
-        JPanel textPanel3 = new JPanel();
-        JPanel textPanel4 = new JPanel();
-        JPanel textPanel5 = new JPanel();
-
-        //Creating labels to hold user information
-        JLabel textLabel = new JLabel("User ID => ");
-        JLabel textLabel2 = new JLabel("User Name => ");
-        JLabel textLabel3 = new JLabel("WorkPlace => ");
-        JLabel textLabel4 = new JLabel("Home Town => ");
-
-        JLabel textLabel5 = new JLabel(ID);
-        JLabel textLabel6 = new JLabel(name1);
-        JLabel textLabel7 = new JLabel(workPlace);
-        JLabel textLabel8 = new JLabel(homeTown);
-
-        //Setting font size for labels
-        textLabel.setFont(new Font("Times New Roman", Font.PLAIN,30));
-        textLabel2.setFont(new Font("Times New Roman", Font.PLAIN, 30));
-        textLabel3.setFont(new Font("Times New Roman", Font.PLAIN, 30));
-        textLabel4.setFont(new Font("Times New Roman", Font.PLAIN, 30));
-
-        textLabel5.setFont(new Font("Times New Roman", Font.PLAIN, 30));
-        textLabel6.setFont(new Font("Times New Roman", Font.PLAIN, 30));
-        textLabel7.setFont(new Font("Times New Roman", Font.PLAIN, 30));
-        textLabel8.setFont(new Font("Times New Roman", Font.PLAIN, 30));
-
-        //Adding labels to text panels
-        textPanel.add(textLabel);
-        textPanel.add(textLabel5);
-        textPanel.setLayout(new FlowLayout(FlowLayout.CENTER , 90, 10));
-
-        textPanel2.add(textLabel2);
-        textPanel2.add(textLabel6);
-        textPanel2.setLayout(new FlowLayout(FlowLayout.CENTER , 51, 10));
-
-        textPanel3.add(textLabel3);
-        textPanel3.add(textLabel7);
-        textPanel3.setLayout(new FlowLayout(FlowLayout.CENTER , 52, 10));
-
-        textPanel4.add(textLabel4);
-        textPanel4.add(textLabel8);
-        textPanel4.setLayout(new FlowLayout(FlowLayout.CENTER , 39, 10));
-
-        //Creating "Back" button
-        JButton btn1 = new JButton("Back");
-        btn1.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    if(e.getSource() == btn1){
-                        frame2.dispose();
-                        frame.setVisible(true);
-                    }
-                }
-            });
-
-        //If boo is true, create "Edit" button and add it to panel
-        if (boo){
-            JButton btn2 = new JButton("Edit");
-            editBtn.btn(btn1,btn2);
-
-            //Action listener for "Edit" button
-            btn2.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        if(e.getSource() == btn2){
-                            JFrame frame1 = new JFrame("Convo");
-                            JPanel panel = new JPanel();
-                            JButton btn1 = new JButton("Back");
-                            JButton btn2 = new JButton("Ok");
-                            JTextField field2 = new JTextField();
-                            field2.setText(name1);
-                            JTextField field3 = new JTextField();
-                            field3.setText(workPlace);
-                            JTextField field4 = new JTextField();
-                            field4.setText(homeTown);
-                            panel = editBtn.registration(null,field2,field3,field4,frame1,btn1,btn2,"Edit",false);
-
-                            btn1.addActionListener(new ActionListener() {
-                                    @Override
-                                    public void actionPerformed(ActionEvent e) {
-                                        if(e.getSource() == btn1){
-                                            frame1.dispose();
-                                            frame2.setVisible(true);
-                                        }
-                                    }
-                                });
-
-                            btn2.addActionListener(new ActionListener() {
-                                    @Override
-                                    public void actionPerformed(ActionEvent e) {
-                                        if(e.getSource()==btn2){
-
-                                            char ch = editBtn.inputValidation(null,field2,field3,field4,false);
-                                            JFrame frame3 = new JFrame("Error");
-                                            JButton buttonn = new JButton("Try Again");
-                                            JLabel text;
-
-                                            buttonn.addActionListener(new ActionListener() {
-                                                    @Override
-                                                    public void actionPerformed(ActionEvent e) {
-                                                        if(e.getSource() == buttonn){
-                                                            frame3.dispose();
-                                                            frame1.setVisible(true);
-                                                        }
-                                                    }
-                                                });
-
-                                            if(ch == 'a') {
-                                                UserDetails details = graph.getUser(id);
-                                                name1 = field2.getText();
-                                                workPlace = field3.getText();
-                                                homeTown = field4.getText();
-                                                details.setName(name1);
-                                                details.setWork(workPlace);
-                                                details.setHome(homeTown);
-                                                but1.setText(name1 + " Profile");
-                                                textLabel6.setText(field2.getText());
-                                                textLabel7.setText(field3.getText());
-                                                textLabel8.setText(field4.getText());
-                                                frame3.dispose();
-                                                frame1.dispose();
-                                            }else if (ch == 'b') {
-                                                text = new JLabel("Use Different ID");
-                                                editBtn.popUp(buttonn,frame3,text,250);
-                                                frame3.setVisible(true);
-                                            }else{
-                                                text = new JLabel("Incorrect Information");
-                                                editBtn.popUp(buttonn,frame3,text,250);
-                                                frame3.setVisible(true);
-                                            }
-                                        }
-                                    }
-                                });
-
-                            frame1.add(panel);
-                            frame1.setLocationRelativeTo(null);
-                            frame1.setVisible(true);
-                        }
-                    }
-                });
-            textPanel5.add(btn1);
-            textPanel5.add(btn2);
-        }else {
-            editBtn.btn(btn1);
-        }
-        if (!boo){
-            textPanel5.add(btn1);
-        }
-
-        textPanel5.setLayout(new FlowLayout(FlowLayout.CENTER , 39, 10));
-
-        main.add(textPanel);
-        main.add(textPanel2);
-        main.add(textPanel3);
-        main.add(textPanel4);
-        main.add(textPanel5);
-
+        main.setBackground(new Color(0, 0, 0, 0));
+        main.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
         main.setLayout(new BoxLayout(main, BoxLayout.Y_AXIS));
 
-        textPanel.setBackground(Color.CYAN);
-        textPanel2.setBackground(Color.CYAN);
-        textPanel3.setBackground(Color.CYAN);
-        textPanel4.setBackground(Color.CYAN);
-        textPanel5.setBackground(Color.GREEN);
+        // Create user details panel
+        JPanel detailsPanel = createUserDetailsPanel();
+        main.add(detailsPanel);
+        main.add(Box.createVerticalStrut(20));
+
+        // Create buttons panel
+        JPanel buttonsPanel = createButtonsPanel(boo);
+
+        main.add(buttonsPanel);
+        main.setOpaque(false);
 
         return main;
+    }
+
+    private JPanel createUserDetailsPanel() {
+        JPanel panel = new JPanel();
+        panel.setBackground(editBtn.backgroundColor);
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(editBtn.accentColor, 2),
+                BorderFactory.createEmptyBorder(20, 20, 20, 20)
+        ));
+
+        // Add user details with consistent styling
+        addDetailField(panel, "User ID", ID);
+        addDetailField(panel, "User Name", name1);
+        addDetailField(panel, "WorkPlace", workPlace);
+        addDetailField(panel, "Home Town", homeTown);
+
+        return panel;
+    }
+
+    private void addDetailField(JPanel panel, String labelText, String value) {
+        JPanel fieldPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 180, 20));
+        fieldPanel.setBackground(editBtn.backgroundColor);
+
+        JLabel label = new JLabel(labelText + ":");
+        label.setFont(new Font("Poppins", Font.BOLD, 16));
+        label.setForeground(editBtn.textColor);
+        label.setPreferredSize(new Dimension(120, 30));
+
+        JLabel valueLabel = new JLabel(value);
+        valueLabel.setFont(new Font("Poppins", Font.PLAIN, 16));
+        valueLabel.setForeground(Color.WHITE);
+
+        fieldPanel.add(label);
+        fieldPanel.add(valueLabel);
+        panel.add(fieldPanel);
+    }
+
+    private JPanel createButtonsPanel(boolean boo) {
+        JPanel buttonsPanel = new JPanel();
+        buttonsPanel.setOpaque(false);
+        // Use FlowLayout, with centered alignment and reasonable gaps between buttons
+        buttonsPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 50, 10));  // Adjust the gap as needed
+
+        // Create Back button
+        JButton backButton = editBtn.createStyledButton("Back");
+        backButton.setPreferredSize(new Dimension(150, 50));
+        backButton.addActionListener(e -> {
+            if (e.getSource() == backButton) {
+                backButton.setOpaque(false);
+                frame2.dispose();
+                frame.setVisible(true);
+            }
+        });
+        buttonsPanel.add(backButton);
+
+        // Optionally add Edit button if 'boo' is true
+        if (boo) {
+            JButton editButton = editBtn.createStyledButton("Edit");
+            editButton.setPreferredSize(new Dimension(150, 50));
+            editButton.addActionListener(e -> {
+                if (e.getSource() == editButton) {
+                    showEditDialog();
+                }
+            });
+            buttonsPanel.add(editButton);
+        }
+
+        return buttonsPanel;
+    }
+
+
+
+    private void showEditDialog() {
+        JFrame editFrame = new JFrame("Edit Profile");
+        JTextField nameField = editBtn.createStyledTextField();
+        nameField.setText(name1);
+        JTextField workField = editBtn.createStyledTextField();
+        workField.setText(workPlace);
+        JTextField homeField = editBtn.createStyledTextField();
+        homeField.setText(homeTown);
+
+        JButton saveButton = editBtn.createStyledButton("Save");
+        JButton cancelButton = editBtn.createStyledButton("Cancel");
+
+        saveButton.addActionListener(e -> {
+            UserDetails details = graph.getUser(id);
+            name1 = nameField.getText();
+            workPlace = workField.getText();
+            homeTown = homeField.getText();
+
+            details.setName(name1);
+            details.setWork(workPlace);
+            details.setHome(homeTown);
+
+            but1.setText(name1 + " Profile");
+
+            frame2.getContentPane().removeAll();
+            JPanel newPanel = editBtn.panel("Profile");
+            newPanel.add(btn1(true));  // This creates fresh panel with new data
+            newPanel.setOpaque(false);
+            frame2.add(newPanel);
+
+            frame2.revalidate();
+            frame2.repaint();
+            frame2.setVisible(true);
+            editFrame.dispose();
+        });
+
+        cancelButton.addActionListener(e -> editFrame.dispose());
+
+        JPanel panel = editBtn.registration(null, nameField, workField, homeField,
+                editFrame, cancelButton, saveButton, "Edit Profile", false);
+
+        editFrame.add(panel);
+        editFrame.setUndecorated(true);
+        editFrame.setLocationRelativeTo(null);
+        editFrame.setVisible(true);
     }
 
     /**
@@ -381,253 +403,261 @@ public class userProfile {
      * @param boo A boolean flag indicating whether the JPanel should display the option to add more images.
      * @return A JPanel with images and controls.
      */
-    public JPanel image(JPanel image,boolean boo){
+    public JPanel image(JPanel image, boolean boo) {
+        JButton addImageButton;
 
-        JButton Nothing;
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BorderLayout());
+        mainPanel.setBackground(editBtn.backgroundColor);
 
-        if(!ImG.equals("")){
+        if(!ImG.equals("")) {
             // If there are images, create a panel and add them to it
-            image.setLayout(new BoxLayout(image , BoxLayout.Y_AXIS));
-            String [] list = ImG.split(":");
-            String [] love = LIKE.split(":");
-            JPanel iii = new JPanel();
-            iii.setLayout(new BoxLayout(iii,BoxLayout.Y_AXIS));
-            iii.setBackground(Color.CYAN);
-            iii.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-            for (int i = 0; i < list.length ; i++) {
+            image.setLayout(new BoxLayout(image, BoxLayout.Y_AXIS));
+            String[] list = ImG.split(":");
+            String[] love = LIKE.split(":");
+
+            JPanel imagesPanel = new JPanel();
+            imagesPanel.setLayout(new BoxLayout(imagesPanel, BoxLayout.Y_AXIS));
+            imagesPanel.setBackground(editBtn.backgroundColor);
+            imagesPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+            for (int i = 0; i < list.length; i++) {
                 String im = list[i];
                 String l = love[i];
-                iii.add(likeAndImage(im , l));
+                imagesPanel.add(likeAndImage(im, l));
+                if (i < list.length - 1) {
+                    imagesPanel.add(Box.createVerticalStrut(20));
+                }
             }
+
             if(boo) {
-                Nothing = new JButton("Add More Image");
-                iii.add(addImage(Nothing));
+                addImageButton = editBtn.createStyledButton("Add More Images");
+                addImageButton.setPreferredSize(new Dimension(150, 50));
+                JPanel buttonPanel = new JPanel();
+                buttonPanel.setBackground(editBtn.backgroundColor);
+                buttonPanel.add(addImage(addImageButton));
+                imagesPanel.add(Box.createVerticalStrut(20));
+                imagesPanel.add(buttonPanel);
             }
-            image.add(iii);
-        }else{
+
+            image.add(imagesPanel);
+        } else {
             // If there are no images, create a panel with a message
-            image = new JPanel(new GridBagLayout());
-            GridBagConstraints gbc = new GridBagConstraints();
-            gbc.gridx = 0;
-            gbc.gridy = 0;
+            image = new JPanel();
+            image.setLayout(new BoxLayout(image, BoxLayout.Y_AXIS));
+            image.setBackground(editBtn.backgroundColor);
+            image.setBorder(BorderFactory.createEmptyBorder(50, 0, 50, 0));
+
             if (boo) {
                 // If requested, add a button to add an image
-                Nothing = new JButton("Add Image");
-                image.add(addImage(Nothing), gbc);
+                addImageButton = editBtn.createStyledButton("Add Image");
+                addImageButton.setPreferredSize(new Dimension(150, 50));
+                JPanel buttonPanel = new JPanel();
+                buttonPanel.setBackground(editBtn.backgroundColor);
+                buttonPanel.add(addImage(addImageButton));
+                image.add(buttonPanel);
             } else {
                 // Otherwise, display a message saying there are no posts yet
                 JLabel lab = new JLabel("No Posts Yet");
-                lab.setHorizontalAlignment(SwingConstants.CENTER);
-                lab.setVerticalAlignment(SwingConstants.CENTER);
-                lab.setFont(new Font("Serif", Font.PLAIN, 30));
-                image.add(lab, gbc);
+                lab.setFont(new Font("Montserrat", Font.BOLD, 24));
+                lab.setForeground(editBtn.textColor);
+                lab.setAlignmentX(Component.CENTER_ALIGNMENT);
+                image.add(lab);
             }
         }
-        image.setBackground(Color.CYAN);
+
         JScrollPane scrollPanel = new JScrollPane(image);
-        scrollPanel.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        scrollPanel.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPanel.setBorder(BorderFactory.createEmptyBorder());
+        scrollPanel.getViewport().setBackground(editBtn.backgroundColor);
 
-        JPanel panel = new JPanel();
-        panel.setLayout(new BorderLayout());
-        panel.add(scrollPanel,BorderLayout.CENTER);
+        mainPanel.add(scrollPanel, BorderLayout.CENTER);
 
-        if (!boo) {
-            // If buttons are not requested, add a back button and a home button
-            JButton backButton = new JButton("Back");
-            JButton Home = new JButton("Go Home");
-            editBtn.btn(backButton,Home);
-            JPanel p = new JPanel();
+        mainPanel.setBorder(BorderFactory.createLineBorder(editBtn.accentColor, 2));
 
-            backButton.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        // When the back button is pressed, close the current frame and open the previous one
-                        if(e.getSource() == backButton) {
-                            frame.dispose();
-                            backFrame.setVisible(true);
-                        }
-                    }
-                });
-
-            Home.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        // When the home button is pressed, close the current frame and open the home page
-                        if(e.getSource() == Home) {
-                            frame.dispose();
-                            homePage.setVisible(true);
-                        }
-                    }
-                });
-            p.setBackground(Color.PINK);
-
-            p.add(backButton);
-            p.add(Home);
-
-            panel.add(p, BorderLayout.SOUTH);
-        }
-        Border border = BorderFactory.createLineBorder(Color.BLACK, 2);
-        scrollPanel.setBorder(border);
-        panel.setBorder(border);
-
-        return panel;
+        return mainPanel;
     }
 
-    /**
-     * This method creates a JPanel containing an image and a like button.
-     * @param name The name of the image.
-     * @param heart The initial number of likes for the image.
-     * @return A JPanel containing the image and like button.
-     */
-    public JPanel likeAndImage(String name , String heart){
-        // Creating a new Photo object with the given name.
+    public JPanel likeAndImage(String name, String heart) {
         Photo image = new Photo(name);
-        image.setBackground(Color.CYAN);
+        image.setBackground(editBtn.backgroundColor);
         image.setPreferredSize(new Dimension(700, 420));
 
-        // Creating a new JPanel and adding the image to it.
-        JPanel imagePanel  = new JPanel();
+        JPanel imagePanel = new JPanel();
         imagePanel.add(image);
         imagePanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        imagePanel.setBackground(Color.cyan);
+        imagePanel.setBackground(editBtn.backgroundColor);
 
-        // Creating a new ImageIcon for the like button.
-        ImageIcon icon = new ImageIcon("../Convo app/images/like.png");
-        Image img = icon.getImage().getScaledInstance(50, 30, Image.SCALE_SMOOTH);
-        ImageIcon scaledIcon = new ImageIcon(img);
-        JButton like = new JButton(heart,scaledIcon);
-        like.setFont(new Font(heart, Font.PLAIN, 24));
-        like.setBackground(Color.RED);
-        like.setAlignmentX(Component.CENTER_ALIGNMENT);
-        // Adding an ActionListener to the like button to update the like count when clicked.
-        like.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    if (e.getSource() == like) {
-                        if(bull) {
-                            //if user like first time then add 1
-                            like.setText(editBtn.likes(id, name, 1));
-                            bull = false;
-                        }else {
-                            //if user like second time then subtract 1
-                            like.setText(editBtn.likes(id, name, -1));
-                            bull = true;
-                        }
-                    }
+        try {
+            ImageIcon icon = new ImageIcon("./images/like.png");
+            Image img = icon.getImage().getScaledInstance(24, 20, Image.SCALE_SMOOTH);
+            ImageIcon scaledIcon = new ImageIcon(img);
+
+            ImageIcon icon1 = new ImageIcon("./images/unlike.png");
+            Image img1 = icon1.getImage().getScaledInstance(30, 36, Image.SCALE_SMOOTH);
+            ImageIcon heartIcon = new ImageIcon(img1);
+
+            JButton likeButton = editBtn.createStyledButton(heart);
+
+            UserDetails details = graph.getUser(id);
+            String[] imG = details.getImage().split(":");
+            String[] lik = details.getLikes().split(":");
+            int likee = 0;
+            for (int i = 0; i < imG.length; i++) {
+                if (imG[i].equals(name)) {
+                    likee = Integer.parseInt(lik[i]);
+                }
+            }
+
+            if(!bull || likee == 0) {
+                likeButton.setIcon(heartIcon);
+            }else{
+                likeButton.setIcon(scaledIcon);
+            }
+
+            likeButton.setFont(new Font("Montserrat", Font.BOLD, 18));
+            likeButton.setIconTextGap(10);
+            likeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+            likeButton.addActionListener(e -> {
+                if(bull) {
+                    likeButton.setText(editBtn.likes(id, name, 1));
+                    likeButton.setIcon(scaledIcon);
+                    bull = false;
+                } else {
+                    likeButton.setText(editBtn.likes(id, name, -1));
+                    likeButton.setIcon(heartIcon);
+                    bull = true;
                 }
             });
-        // Creating a new JPanel to hold the image and like button, and returning it.
-        JPanel images = new JPanel();
-        images.setLayout(new BoxLayout(images,BoxLayout.Y_AXIS));
-        images.add(imagePanel);
-        images.add(like);
-        images.setBackground(Color.CYAN);
-        images.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        return images;
+
+            JPanel containerPanel = new JPanel();
+            containerPanel.setLayout(new BoxLayout(containerPanel, BoxLayout.Y_AXIS));
+            containerPanel.setBackground(editBtn.backgroundColor);
+            containerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+            containerPanel.add(imagePanel);
+            containerPanel.add(Box.createVerticalStrut(10));
+            containerPanel.add(likeButton);
+
+            return containerPanel;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return imagePanel;
+        }
     }
 
-    /**
-     * This method adds an ActionListener to the given JButton. When the button is clicked,
-     * it performs the following actions:
-     * Gets the UserDetails of the given id from graph.
-     * Updates the image and likes fields of the UserDetails object.
-     * Changes the background color of the button to orange and disables it.
-     * Removes all components from the imagee JPanel and adds a new image JPanel to it.
-     * @param btn the JButton to which an ActionListener is to be added.
-     */
-    public void actionListener(JButton btn){
-        btn.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    if(e.getSource() == btn) {
-                        UserDetails details = graph.getUser(id);
-                        ImG = details.getImage() + btn.getText() + ".jpg" + ":";
-                        LIKE = details.getLikes() + 0 + ":";
-                        details.setImage(ImG);
-                        details.setLikes(LIKE);
-                        btn.setBackground(Color.orange);
+    public void actionListener(JButton btn) {
+        btn.addActionListener(e -> {
+            if(e.getSource() == btn) {
+                UserDetails details = graph.getUser(id);
+                ImG = details.getImage() + btn.getText() + ".jpg" + ":";
+                LIKE = details.getLikes() + 0 + ":";
+                details.setImage(ImG);
+                details.setLikes(LIKE);
+                btn.setBackground(editBtn.accentColor);
+                btn.setEnabled(false);
 
-                        btn.setEnabled(false);
-
-                        imagee.removeAll();
-
-                        imagee.add(image(new JPanel(), true));
-                    }
-                }
-            });
-
+                imagee.removeAll();
+                imagee.add(image(new JPanel(), true));
+                imagee.revalidate();
+                imagee.repaint();
+            }
+        });
     }
 
-    /**
-     * This method creates a JPanel with a given JButton and returns it.
-     * When the JButton is clicked, it opens a new JFrame and displays a list of items.
-     * @param Nothing the JButton to be added to the JPanel
-     * @return a JPanel with a given JButton
-     */
-    public JPanel addImage(JButton Nothing){
-        JPanel image = new JPanel();
-        editBtn.btn(Nothing);
-        image.add(Nothing);
-        image.setBackground(Color.cyan);
+    public JPanel addImage(JButton addButton) {
+        // Pre-load and cache all images
+        Map<String, ImageIcon> imageCache = new HashMap<>();
+        String[] imgName = {"Boat","Book","Bike","Game","Joke","Meme","Bake","Ball","Bead","Calm","Camp","Cook",
+                "Dog","Draw","Drum","Felt","Film","Fish","Fizz","Food","Golf","Gym","Hike","Hula","Dart",
+                "Kite","Knot","LARP","Love","Lyft","Moon","Mosh","Park","Puzz","Read","Ride","Rink","Run","Dive",
+                "Sail","Shop","Sing","Ski","Skip","Sled","Surf","Swim","Toss","Tree","Tuba","Vlog","Walk","Wine","Yoga"};
 
-        Nothing.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    if(e.getSource() == Nothing) {
-                        String [] imgName = {"You","Joke","Meme","Bake","Ball","Bead","Bike","Boat","Book","Calm","Camp","Cook",
-                                "Dog","Draw","Drum","Felt","Film","Fish","Fizz","Food","Game","Golf","Gym","Hike","Hula","Dart",
-                                "Kite","Knot","LARP","Love","Lyft","Moon","Mosh","Park","Puzz","Read","Ride","Rink","Run","Dive",
-                                "Sail","Shop","Sing","Ski","Skip","Sled","Surf","Swim","Toss","Tree","Tuba","Vlog","Walk","Wine","Yoga"};
-
-                        JFrame frame1 = new JFrame("Convo");
-                        JButton button = new JButton("Back");
-                        JPanel panel = new JPanel();
-                        JPanel panel2 = new JPanel();
-
-                        frame1.setSize(500, 400);
-                        frame1.setLocationRelativeTo(null);
-
-                        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-                        panel2.setLayout(new FlowLayout(FlowLayout.CENTER,10,10));
-                        panel2.setPreferredSize(new Dimension(450, 850));
-                        panel2.setBackground(Color.PINK);
-
-                        editBtn.btn(button);
-
-                        ButtonGroup group = new ButtonGroup();
-                        JButton button1;
-                        for (int i = 0; i < imgName.length; i++) {
-                            button1 = new JButton(imgName[i]);
-                            editBtn.btn3(button1);
-                            button1.setPreferredSize(new Dimension(100, 50));
-                            group.add(button1);
-                            panel2.add(button1);
-                            actionListener(button1);
-                        }
-
-                        JScrollPane scrollPanel1 = new JScrollPane(panel2);
-                        scrollPanel1.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-                        scrollPanel1.setPreferredSize(new Dimension(400, 300));
-                        panel.add(scrollPanel1);
-                        panel.add(Box.createVerticalStrut(10));
-                        panel.add(button);
-                        panel.add(Box.createVerticalStrut(20));
-                        panel.setBackground(Color.cyan);
-
-                        button.addActionListener(new ActionListener() {
-                                @Override
-                                public void actionPerformed(ActionEvent e) {
-                                    frame1.dispose();
-                                    frame.setVisible(true);
-                                }
-                            });
-
-                        frame1.add(panel);
-                        frame1.setVisible(true);
-                    }
+        // Pre-load images in background thread
+        new Thread(() -> {
+            for (String s : imgName) {
+                try {
+                    ImageIcon icon = new ImageIcon("./images/" + s + ".jpg");
+                    Image img = icon.getImage().getScaledInstance(400, 250, Image.SCALE_SMOOTH);
+                    imageCache.put(s, new ImageIcon(img));
+                } catch (Exception ex) {
+                    System.out.println("Could not load image: " + s + ".jpg");
                 }
-            });
-        return image;
+            }
+        }).start();
+
+        JPanel panel = new JPanel();
+        panel.setBackground(editBtn.backgroundColor);
+        panel.add(addButton);
+
+        addButton.addActionListener(e -> {
+            if(e.getSource() == addButton) {
+                JFrame imageFrame = new JFrame("Choose Image");
+                imageFrame.setUndecorated(true);
+                imageFrame.getRootPane().setBorder(BorderFactory.createLineBorder(editBtn.accentColor, 2));
+
+                JPanel mainPanel = new JPanel();
+                mainPanel.setLayout(new BorderLayout());
+                mainPanel.setBackground(editBtn.backgroundColor);
+
+                JPanel gridPanel = new JPanel(new GridLayout(0, 1, 54, 10));
+                gridPanel.setBackground(editBtn.backgroundColor);
+                gridPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+                ButtonGroup group = new ButtonGroup();
+                for (String s : imgName) {
+                    JButton imageButton = new JButton();
+                    imageButton.setText(s);
+                    ImageIcon cachedIcon = imageCache.get(s);
+                    if (cachedIcon != null) {
+                        imageButton.setIcon(cachedIcon);
+                    } else {
+                        try {
+                            ImageIcon icon = new ImageIcon("./images/" + s + ".jpg");
+                            Image img = icon.getImage().getScaledInstance(400, 250, Image.SCALE_SMOOTH);
+                            imageButton.setIcon(new ImageIcon(img));
+                        } catch (Exception ex) {
+                            System.out.println("Could not load image: " + s + ".jpg");
+                            continue;
+                        }
+                    }
+                    imageButton.setName(s);
+                    imageButton.setPreferredSize(new Dimension(400, 260));
+                    imageButton.setBorderPainted(false);
+                    imageButton.setContentAreaFilled(false);
+                    imageButton.setFocusPainted(false);
+                    group.add(imageButton);
+                    gridPanel.add(imageButton);
+                    actionListener(imageButton);
+                }
+
+                JScrollPane scrollPane = new JScrollPane(gridPanel);
+                scrollPane.setBorder(null);
+                scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+                JButton backButton = editBtn.createStyledButton("Back");
+                backButton.addActionListener(event -> {
+                    imageFrame.dispose();
+                    frame.setVisible(true);
+                });
+
+                JPanel buttonPanel = new JPanel();
+                buttonPanel.setBackground(editBtn.backgroundColor);
+                buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+                buttonPanel.add(backButton);
+
+                mainPanel.add(scrollPane, BorderLayout.CENTER);
+                mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+                imageFrame.add(mainPanel);
+                imageFrame.setSize(500, 600);
+                imageFrame.setLocationRelativeTo(null);
+                imageFrame.setVisible(true);
+            }
+        });
+
+        return panel;
     }
 
 }

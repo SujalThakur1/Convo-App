@@ -14,7 +14,7 @@ public class Photo extends JPanel {
      * @param image The file path of the image to be displayed.
      */
     public Photo(String image) {
-        bimage =  new javax.swing.ImageIcon("../Convo app/images/"+image).getImage();
+        bimage =  new javax.swing.ImageIcon("./images/"+image).getImage();
     }
 
     @Override
@@ -22,15 +22,6 @@ public class Photo extends JPanel {
         super.paintComponent(g);
         Graphics2D 	g2 = (Graphics2D) g;
         g2.drawImage(bimage, 0, 0,700,400, null);
-    }
-
-    /**
-     * Loads a new image and repaints the panel with it.
-     * @param i The new Image object to be displayed.
-     */
-    public void loadImage(Image i) {
-        bimage = i;
-        repaint();
     }
 
 }

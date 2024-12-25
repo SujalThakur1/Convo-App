@@ -261,36 +261,6 @@ public class MyGraph {
     }
 
     /**
-     * Returns a list of user details that match the given place, friend ID, and user ID.
-     * @param place a string representing a place (either work or home) where the friend of a friend may be located.
-     * @param FriendID the ID of the friend of the user for whom to retrieve matches.
-     * @param ch a character that indicates whether the place is the friend's work or home.
-     * @param UserID the user ID of the user for whom to retrieve matches.
-     * @return an ArrayList of UserDetails objects that match the criteria, or null if no matches were found.
-     */
-    public ArrayList<UserDetails> getUsersByPlace(String place, int FriendID,char ch,int UserID) {
-        ArrayList<UserDetails> FriendOfFriends = getUserFriends(FriendID);
-        ArrayList<UserDetails> usersInplace = new ArrayList<>();
-        // Loop through all friends of the friend to find matches
-        for(UserDetails details : FriendOfFriends){
-            if(ch == 'w') {
-                if (details.getWork().equals(place)) {
-                    usersInplace.add(details);
-                }
-            }else{
-                if (details.getHome().equals(place)) {
-                    usersInplace.add(details);
-                }
-            }
-        }
-        // Return null if no matches were found
-        if (usersInplace.isEmpty()) {
-            return null;
-        }
-        return usersInplace;
-    }
-
-    /**
      *Returns a list of user details that match the work or home place of the user with the given ID.
      * @param id the ID of the user for whom to retrieve matches.
      * @return an ArrayList of UserDetails objects representing the users that live or work in the same place

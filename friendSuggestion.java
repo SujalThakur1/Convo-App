@@ -8,292 +8,340 @@ import java.util.ArrayList;
  * A class for displaying friend suggestions to a user.
  */
 public class friendSuggestion {
-    private JFrame frame; // frame to hold the suggestion panel
-    private Edit editBtn; // a reference to the Edit class for styling buttons and panels
-    private boolean check; // boolean flag to check if a friend has been added
-    private int id; // id of the current user
-    private MyGraph graph; // a reference to the MyGraph class for retrieving user details
+    private JFrame frame;
+    private Edit editBtn;
+    private boolean check;
+    private int id;
+    private MyGraph graph;
+    private final Color primaryColor = new Color(147, 112, 219); // Modern purple
+    private final Color backgroundColor = new Color(25, 25, 35); // Dark background
+    private final Color textColor = new Color(180, 180, 200); // Soft light color
 
-    /**
-     * Constructor for FriendSuggestion class.
-     * @param ID The id of the current user.
-     * @param graph The MyGraph object used to retrieve user details.
-     */
-    public friendSuggestion(int ID,MyGraph graph){
+    public friendSuggestion(int ID, MyGraph graph) {
         this.graph = graph;
         editBtn = new Edit();
         this.id = ID;
         check = false;
     }
 
-    /**
-     * Method to display the suggestion window.
-     */
-    public void suggestion(){
+    public void suggestion() {
         frame = new JFrame("Convo");
-        frame.setSize(800, 600);
-        frame.setLocationRelativeTo(null);
+        frame.setSize(900, 730);
+        frame.getRootPane().setBorder(BorderFactory.createLineBorder(primaryColor, 2));
         editBtn.WindowExit(frame);
         mainPanel();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
-    /**
-     * Method to create the main panel of the suggestion window.
-     */
-    public void mainPanel(){
-        JPanel MainPanel = editBtn.panel("Suggestion");
+    public void mainPanel() {
+        // Create main panel with gradient background
+        JPanel mainPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                GradientPaint gradient = new GradientPaint(
+                        0, 0, new Color(25, 25, 35),
+                        0, getHeight(), new Color(45, 45, 60)
+                );
+                g2d.setPaint(gradient);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
+        mainPanel.setLayout(new BorderLayout(30, 30));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(40, 40, 40, 40));
 
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel,BoxLayout.Y_AXIS));
+        // Header
+        JLabel headerLabel = new JLabel("Friend Suggestions");
+        headerLabel.setFont(new Font("Poppins", Font.BOLD, 36));
+        headerLabel.setForeground(primaryColor);
+        headerLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        headerLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
+
+        // Content Panel
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        contentPanel.setOpaque(false);
 
         ArrayList<UserDetails> details = graph.getUsersByPlace(id);
-        if (details == null){
-            // if user has no friends in the same place, show all users
-            for (UserDetails detail: graph.getUsers()) {
-                if(id != detail.getID()){
-                    panel.add(Stackbtn(detail.getName() , detail.getID() , detail.getWork(), detail.getHome()));
+        if (details == null) {
+            for (UserDetails detail : graph.getUsers()) {
+                if (id != detail.getID()) {
+                    contentPanel.add(Stackbtn(detail.getName(), detail.getID(), detail.getWork(), detail.getHome()));
+                    contentPanel.add(Box.createVerticalStrut(10));
                 }
             }
-        }else{
-            // if user has friends in the same place, show only friends
-            if(details != null) {
+        } else {
+            if (details != null) {
                 for (UserDetails det : details) {
-                    panel.add(GraphBtn(det.getName(), det.getID(), det.getWork(), det.getHome()));
+                    contentPanel.add(GraphBtn(det.getName(), det.getID(), det.getWork(), det.getHome()));
+                    contentPanel.add(Box.createVerticalStrut(10));
                 }
             }
         }
 
-        JScrollPane scrollPanel = new JScrollPane(panel);
-        scrollPanel.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        JScrollPane scrollPane = new JScrollPane(contentPanel);
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
-        JButton button = new JButton("OK");
-        editBtn.btn(button);
+        // Footer with OK button
+        JButton okButton = editBtn.createStyledButton("Continue");
+        okButton.setFont(new Font("Arial", Font.BOLD, 18));
+        okButton.setPreferredSize(new Dimension(200, 50));
 
-        button.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    if(e.getSource() == button){
-                        userProfile profile = new userProfile(id,graph);
-                        if(check) {
-                            // if user has selected at least one friend, display user profile
-                            frame.dispose();
-                            profile.display(true);
-                        }else {
-                            // if user has not selected any friend, show error message
-                            JFrame frame1 = new JFrame("Convo");
-                            JButton errorButton = new JButton("Try Again");
-                            JLabel errorMsg = new JLabel("Please Add At Least One Friend To Proceed");
-                            editBtn.popUp(errorButton,frame1,errorMsg,400);
-                            errorButton.addActionListener(new ActionListener() {
-                                    @Override
-                                    public void actionPerformed(ActionEvent e) {
-                                        if(e.getSource() == errorButton){
-                                            frame1.dispose();
-                                            frame.setVisible(true);
-                                        }
-                                    }
-                                });
-                            frame1.setVisible(true);
-                        }
-                    }
-                }
-            });
 
-        MainPanel.add(scrollPanel);
-        MainPanel.add(button);
-        frame.add(MainPanel);
+        okButton.addActionListener(e -> {
+            if (check) {
+                userProfile profile = new userProfile(id, graph);
+                frame.dispose();
+                profile.display(true);
+            } else {
+                showErrorDialog();
+            }
+        });
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        buttonPanel.setOpaque(false);
+        buttonPanel.add(okButton);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
+
+        mainPanel.add(headerLabel, BorderLayout.NORTH);
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
+        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        frame.add(mainPanel);
     }
 
-    /**
-     * Method to create a panel for each friend.
-     * @param name The name of the friend.
-     * @param ID The ID of the friend.
-     * @param work The workplace of the friend.
-     * @param home The homeplace of the friend.
-     * @return A JPanel object representing the friend's panel.
-     */
-    public JPanel GraphBtn(String name , int ID, String work, String home){
-        JButton addBtn = new JButton("Add");
-        addBtn.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    if(e.getSource() == addBtn) {
-                        graph.Friend(id,ID,true);
-                        addBtn.setEnabled(false);
-                        addBtn.setText("Added");
-                        check = true;
-                    }
-                }
-            });
-        return friends(name,work,home,addBtn);
-    }
+    private void showErrorDialog() {
+        JDialog dialog = new JDialog(frame, "Error", true);
+        dialog.setUndecorated(true);
+        dialog.setSize(330, 150);
+        dialog.setLocationRelativeTo(frame);
 
-    /**
-     *This method creates a JPanel for a friend with a given name, work, and home address,
-     * along with an "Add" button that triggers an ActionListener.
-     * @param name The name of the friend.
-     * @param ID The ID of the friend.
-     * @param work The work address of the friend.
-     * @param home The home address of the friend.
-     * @return A JPanel for the friend with a name, work address, home address, and an "Add" button.
-     */
-    public JPanel Stackbtn(String name , int ID, String work, String home){
-        JButton addBtn = new JButton("Add");
-        addBtn.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    if(e.getSource() == addBtn) {
-                        actionListener(ID,addBtn,true);
-                    }
-                }
-            });
-        return friends(name,work,home,addBtn);
-    }
-
-    /**
-     *
-     * along with an "Inspect" button that triggers an ActionListener.
-     * @param name The name of the friend.
-     * @param work The work address of the friend.
-     * @param home The home address of the friend.
-     * @param addBtn The "Add" button for the friend.
-     * @return a JPanel containing friend's details and buttons
-     */
-    public JPanel friends(String name, String work, String home,JButton addBtn){
+        // Create main panel with BoxLayout
         JPanel panel = new JPanel();
-        panel.setLayout(new GridBagLayout());
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(backgroundColor);
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20)); // Padding around the panel
 
-        JLabel nameLbl = new JLabel(name);
-        nameLbl.setFont(new Font("Serif", Font.PLAIN, 30));
+        // Create error message label
+        JLabel message = new JLabel("Please add at least one friend to proceed");
+        message.setForeground(textColor);
+        message.setFont(new Font("Poppins", Font.PLAIN, 14));
+        message.setHorizontalAlignment(SwingConstants.CENTER);
+        message.setAlignmentX(Component.CENTER_ALIGNMENT); // Centers the label horizontally
 
-        JButton InspectBtn = new JButton("Inspect");
-        editBtn.btnSmall(addBtn,InspectBtn);
+        // Create Try Again button
+        JButton tryAgainButton = editBtn.createStyledButton("Try Again");
+        tryAgainButton.addActionListener(e -> dialog.dispose());
+        tryAgainButton.setPreferredSize(new Dimension(150, 40)); // Set preferred size of the button
+        tryAgainButton.setMaximumSize(new Dimension(150, 40));    // Set maximum size to prevent stretching
+        tryAgainButton.setAlignmentX(Component.CENTER_ALIGNMENT); // Centers the button horizontally
 
-        InspectBtn.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    if (e.getSource() == InspectBtn) {
-                        inspect(name,work,home,frame);
-                    }
-                }
-            });
+        // Add components to the panel with additional space
+        panel.add(Box.createVerticalGlue()); // Adds flexible space at the top
+        panel.add(Box.createRigidArea(new Dimension(0, 10))); // Adds space between top and message
+        panel.add(message); // Adds the message label
+        panel.add(Box.createRigidArea(new Dimension(0, 20))); // Adds space between message and button
+        panel.add(tryAgainButton); // Adds the button
+        panel.add(Box.createVerticalGlue()); // Adds flexible space at the bottom
 
-        GridBagConstraints NameContainer = new GridBagConstraints();
-        NameContainer.gridx = 0;
-        NameContainer.gridy = 0;
-        NameContainer.weightx = 1.0;
-        NameContainer.fill = GridBagConstraints.HORIZONTAL;
-        NameContainer.anchor = GridBagConstraints.WEST;
-        NameContainer.insets = new Insets(10, 100, 10, 10);
+        // Panel border and dialog settings
+        panel.setBorder(BorderFactory.createLineBorder(new Color(147, 112, 219), 2));
 
-        GridBagConstraints BtnContainer = new GridBagConstraints();
-        BtnContainer.gridx = 1;
-        BtnContainer.gridy = 0;
-        BtnContainer.weightx = 0.0;
-        BtnContainer.insets = new Insets(10, 10, 10, 50);
+        dialog.add(panel);
+        dialog.setVisible(true);
+    }
 
-        GridBagConstraints Btn2Container = new GridBagConstraints();
-        Btn2Container.gridx = 2;
-        Btn2Container.gridy = 0;
-        Btn2Container.weightx = 0.0;
-        Btn2Container.insets = new Insets(10, 10, 10, 100);
+    public JPanel GraphBtn(String name, int ID, String work, String home) {
+        JButton addBtn = createStyledButton("Add");
+        addBtn.addActionListener(e -> {
+            graph.Friend(id, ID, true);
+            addBtn.setEnabled(false);
+            addBtn.setText("Added");
+            addBtn.setBackground(new Color(45, 45, 60));
+            check = true;
+        });
+        return createFriendPanel(name, work, home, addBtn);
+    }
 
-        panel.add(nameLbl, NameContainer);
-        panel.add(InspectBtn, BtnContainer);
-        panel.add(addBtn, Btn2Container);
-        panel.setBackground(Color.cyan);
+    public JPanel Stackbtn(String name, int ID, String work, String home) {
+        JButton addBtn = createStyledButton("Add");
+        addBtn.addActionListener(e -> actionListener(ID, addBtn, true));
+        return createFriendPanel(name, work, home, addBtn);
+    }
+
+    private JButton createStyledButton(String text) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Poppins", Font.BOLD, 12));
+        button.setForeground(Color.WHITE);
+        button.setBackground(primaryColor);
+        button.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
+        button.setFocusPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return button;
+    }
+
+    private JPanel createFriendPanel(String name, String work, String home, JButton addBtn) {
+        // Create main panel with subtle gradient
+        JPanel panel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                // Soft gradient background
+                GradientPaint gradient = new GradientPaint(
+                        0, 0, new Color(104, 83, 195, 132), // A lighter purple
+                        getWidth(), getHeight(), new Color(85, 65, 163, 98) // Another lighter purple
+                );
+                g2d.setPaint(gradient);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
+            }
+        };
+        panel.setLayout(new BorderLayout());
+        panel.setBorder(BorderFactory.createEmptyBorder(12, 20, 12, 20));
+        panel.setOpaque(false);
+
+        // Left side - Name with icon and modern typography
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        leftPanel.setOpaque(false);
+
+        // Add user icon
+        JLabel iconLabel = new JLabel("👤");
+        iconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 20));
+        iconLabel.setForeground(new Color(220, 220, 230));
+        leftPanel.add(iconLabel);
+
+        // Name label with modern typography
+        JLabel nameLabel = new JLabel(name);
+        nameLabel.setFont(new Font("Poppins", Font.BOLD, 16));
+        nameLabel.setForeground(new Color(220, 220, 230));
+        leftPanel.add(nameLabel);
+
+        // Right side - Buttons
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        rightPanel.setOpaque(false);
+
+        // Style the inspect button
+        JButton inspectBtn = createStyledButton("Inspect");
+        inspectBtn.addActionListener(e -> inspect(name, work, home, frame));
+
+        rightPanel.add(inspectBtn);
+        rightPanel.add(addBtn);
+
+        // Add panels to main panel
+        panel.add(leftPanel, BorderLayout.WEST);
+        panel.add(rightPanel, BorderLayout.EAST);
 
         return panel;
     }
 
-    /**
-     * Displays friend's details in a popup window
-     * @param name the name of the friend
-     * @param work the workplace of the friend
-     * @param home the home address of the friend
-     * @param frame the JFrame to display the popup window
-     */
-    public void inspect(String name , String work, String home, JFrame frame){
-        String Name = "User Name => " + name;
-        String Work = "User WorkPlace => " + work;
-        String Home = "User HomePlace => " + home;
+    public void inspect(String name, String work, String home, JFrame parentFrame) {
+        JDialog dialog = new JDialog(parentFrame, "User Details", true);
+        dialog.setSize(450, 300);
+        dialog.setLocationRelativeTo(parentFrame);
+        dialog.setUndecorated(true);
 
-        JFrame frame2 = new JFrame("Convo");
-        JButton btn = new JButton("Back");
-        JLabel label = new JLabel(Name);
-        JLabel label2 = new JLabel(Work);
-        JLabel label3 = new JLabel(Home);
+        // Main panel with BoxLayout
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.setBackground(backgroundColor);
 
-        editBtn.PopUpFrame(frame2, 350);
-        editBtn.btn(btn);
-        editBtn.PopUpText(label);
-        editBtn.PopUpText(label2);
-        editBtn.PopUpText(label3);
+        // Add top gap
+        mainPanel.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        JPanel panel1 = new JPanel();
-        panel1.setLayout(new BoxLayout(panel1, BoxLayout.Y_AXIS));
-        panel1.add(Box.createVerticalGlue());
-        panel1.add(label);
-        panel1.add(label2);
-        panel1.add(label3);
-        panel1.add(Box.createVerticalStrut(10));
-        panel1.add(btn);
+        // Heading
+        JLabel headingLabel = new JLabel("User Details");
+        headingLabel.setFont(new Font("Poppins", Font.BOLD, 24));
+        headingLabel.setForeground(primaryColor);
+        headingLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        mainPanel.add(headingLabel);
+        mainPanel.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        btn.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    if (e.getSource() == btn) {
-                        frame2.dispose();
-                        frame.setVisible(true);
-                    }
-                }
-            });
+        // Name Panel
+        JPanel namePanel = new JPanel(new BorderLayout());
+        namePanel.setBorder(BorderFactory.createEmptyBorder(0, 50, 0, 50));
+        namePanel.setOpaque(false);
 
-        panel1.add(Box.createVerticalGlue());
-        panel1.setBackground(Color.cyan);
+        JLabel nameLabelLeft = new JLabel("Name");
+        nameLabelLeft.setFont(new Font("Poppins", Font.PLAIN, 16));
+        nameLabelLeft.setForeground(textColor);
 
-        frame2.add(panel1);
-        frame2.setVisible(true);
+        JLabel nameLabelRight = new JLabel(name);
+        nameLabelRight.setFont(new Font("Poppins", Font.PLAIN, 16));
+        nameLabelRight.setForeground(textColor);
+
+        namePanel.add(nameLabelLeft, BorderLayout.WEST);
+        namePanel.add(nameLabelRight, BorderLayout.EAST);
+        mainPanel.add(namePanel);
+        mainPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        // Workplace Panel
+        JPanel workPanel = new JPanel(new BorderLayout());
+        workPanel.setBorder(BorderFactory.createEmptyBorder(0, 50, 0, 50));
+        workPanel.setOpaque(false);
+
+        JLabel workLabelLeft = new JLabel("Workplace");
+        workLabelLeft.setFont(new Font("Poppins", Font.PLAIN, 16));
+        workLabelLeft.setForeground(textColor);
+
+        JLabel workLabelRight = new JLabel(work);
+        workLabelRight.setFont(new Font("Poppins", Font.PLAIN, 16));
+        workLabelRight.setForeground(textColor);
+
+        workPanel.add(workLabelLeft, BorderLayout.WEST);
+        workPanel.add(workLabelRight, BorderLayout.EAST);
+        mainPanel.add(workPanel);
+        mainPanel.add(Box.createRigidArea(new Dimension(0, 10)));
+
+        // Home Panel
+        JPanel homePanel = new JPanel(new BorderLayout());
+        homePanel.setBorder(BorderFactory.createEmptyBorder(0, 50, 20, 50));
+        homePanel.setOpaque(false);
+
+        JLabel homeLabelLeft = new JLabel("Home");
+        homeLabelLeft.setFont(new Font("Poppins", Font.PLAIN, 16));
+        homeLabelLeft.setForeground(textColor);
+
+        JLabel homeLabelRight = new JLabel(home);
+        homeLabelRight.setFont(new Font("Poppins", Font.PLAIN, 16));
+        homeLabelRight.setForeground(textColor);
+
+        homePanel.add(homeLabelLeft, BorderLayout.WEST);
+        homePanel.add(homeLabelRight, BorderLayout.EAST);
+        mainPanel.add(homePanel);
+
+        mainPanel.add(Box.createVerticalGlue());
+
+        // Back Button
+        JButton backButton = editBtn.createStyledButton("Back");
+        backButton.addActionListener(e -> dialog.dispose());
+        backButton.setPreferredSize(new Dimension(150, 40));
+        backButton.setMaximumSize(new Dimension(150, 40));
+        backButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        mainPanel.add(backButton);
+
+        // Add bottom gap
+        mainPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+
+        // Set border and finalize dialog
+        mainPanel.setBorder(BorderFactory.createLineBorder(primaryColor, 2));
+        dialog.add(mainPanel);
+        dialog.setVisible(true);
     }
-
-    /**
-     * This method is an action listener which updates the user's friends list by adding or removing a friend.
-     * @param ID the ID of the friend being added or removed
-     * @param addBtn the button that triggered the action
-     * @param bull a boolean that determines whether the friend is being added (true) or removed (false)
-     * @return the updated size of the user's friend list
-     */
 
     public int actionListener(int ID, JButton addBtn, boolean bull) {
-        int size;
-        if (bull) {
-            // adds a friend to the user's friend list
-            size = graph.Friend(id, ID, true);
-        } else {
-            // removes a friend from the user's friend list
-            size = graph.Friend(id, ID, false);
-        }
-
-        if (bull) {
-            // sets the text of the add button to "Added" if a friend is added
-            addBtn.setText("Added");
-        } else {
-            // sets the text of the add button to "Removed" if a friend is removed
-            addBtn.setText("Removed");
-        }
-
-        // sets check to true
-        check = true;
-
-        // sets the background color of the add button to red
-        addBtn.setBackground(Color.red);
-
-        // disables the add button
+        int size = bull ? graph.Friend(id, ID, true) : graph.Friend(id, ID, false);
+        addBtn.setText(bull ? "Added" : "Removed");
         addBtn.setEnabled(false);
-
-        // returns the updated size of the user's friend list
+        addBtn.setBackground(new Color(45, 45, 60));
+        check = true;
         return size;
     }
-
 }

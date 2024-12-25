@@ -25,7 +25,6 @@ public class File {
             printWriter = new PrintWriter(outputStream);
 
             for (UserDetails details : graph.getUsers()) {
-                int id = details.getID();
                 String friend = graph.getUserEdges(details);
                 String allData = details.getID() + "," + details.getName() + ","
                     + details.getWork() + "," + details.getHome() + "," + friend

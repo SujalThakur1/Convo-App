@@ -1,17 +1,21 @@
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.util.ConcurrentModificationException;
+import java.awt.event.*;
+import javax.swing.border.Border;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
+import java.net.URL;
 
 /**
  * A class to provide methods to edit GUI components
  */
-public class Edit {
-    private MyGraph graph;
+public class  Edit {
+    public MyGraph graph;
+    public Color primaryColor = new Color(72, 61, 139); // Dark slate blue
+    public Color accentColor = new Color(123, 104, 238); // Medium slate blue
+    public Color backgroundColor = new Color(25, 25, 35); // Dark background
+    public Color textColor = new Color(147, 112, 219); // Medium purple
 
     /**
      *  Constructs an instance of Edit with a MyGraph object.
@@ -34,41 +38,61 @@ public class Edit {
      * @param btn1 the first button to modify.
      * @param btn2 the second button to modify.
      */
-    public void btn(JButton btn1,JButton btn2){
-        btnColorFont(btn1 , btn2);
-        btn1.setPreferredSize(new Dimension(300,50));
+    public void btn(JButton btn1, JButton btn2) {
+        styleButtons(btn1, btn2);
+        btn1.setPreferredSize(new Dimension(300, 50));
         btn2.setPreferredSize(new Dimension(300, 50));
     }
 
-    /**
-     * Changes the font, background color and alignment of a button to a specified format,
-     * and sets its preferred size to (300,50).
-     * @param btn1 the button to modify.
-     */
-    public void btn(JButton btn1){
-        btn2(btn1);
-        btn1.setPreferredSize(new Dimension(300,50));
-        btn1.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+
+    private void styleButtons(JButton btn1, JButton btn2) {
+        styleButton(btn1);
+        styleButton(btn2);
     }
 
-    /**
-     * This method sets the font, background color and horizontal alignment of a JButton.
-     * @param btn1 The JButton whose properties are being set.
-     */
-    public void btn2(JButton btn1){
-        btn1.setFont(new Font("Arial Black", Font.PLAIN, 20));
-        btn1.setBackground(Color.yellow);
-        btn1.setAlignmentX(Component.CENTER_ALIGNMENT);
+    private void styleButton(JButton btn) {
+        btn.setFocusPainted(false);
+        btn.setFont(new Font("Arial", Font.BOLD, 14));
+        btn.setForeground(Color.WHITE);
+        btn.setBackground(primaryColor);
+        btn.setBorder(createStyledBorder());
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        btn.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                btn.setBackground(accentColor);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                btn.setBackground(primaryColor);
+            }
+        });
     }
 
-    /**
-     *This method sets the font, background color, horizontal alignment and preferred size of a JButton by calling the btn2 method.
-     * @param btn1 The first JButton whose properties are being set.
-     */
-    public void btn3(JButton btn1){
-        btn2(btn1);
-        btn1.setPreferredSize(new Dimension(150,50));
+    private Border createStyledBorder() {
+        return new Border() {
+            @Override
+            public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(accentColor);
+                g2d.setStroke(new BasicStroke(2));
+                g2d.drawRoundRect(x + 1, y + 1, width - 3, height - 3, 20, 20);
+            }
+
+            @Override
+            public Insets getBorderInsets(Component c) {
+                return new Insets(5, 10, 5, 10);
+            }
+
+            @Override
+            public boolean isBorderOpaque() {
+                return false;
+            }
+        };
     }
 
     /**
@@ -76,94 +100,10 @@ public class Edit {
      * @param btn1 The first JButton whose properties are being set.
      * @param btn2 The second JButton whose properties are being set.
      */
-    public void btnSmall(JButton btn1,JButton btn2){
-        btnColorFont(btn1 , btn2);
-        btn1.setPreferredSize(new Dimension(150,50));
+    public void btnSmall(JButton btn1, JButton btn2) {
+        styleButtons(btn1, btn2);
+        btn1.setPreferredSize(new Dimension(150, 50));
         btn2.setPreferredSize(new Dimension(150, 50));
-    }
-
-    /**
-     * This method sets the font, background color and adds two JButtons to the same button group.
-     * @param btn1 The first JButton whose properties are being set.
-     * @param btn2 The second JButton whose properties are being set.
-     */
-    public void btnColorFont(JButton btn1, JButton btn2){
-        ButtonGroup group = new ButtonGroup();
-        group.add(btn1);
-        group.add(btn2);
-        btn1.setFont(new Font("Arial Black", Font.PLAIN, 20));
-        btn2.setFont(new Font("Arial Black", Font.PLAIN, 20));
-        btn1.setBackground(Color.yellow);
-        btn2.setBackground(Color.yellow);
-    }
-
-    /**
-     * This method creates a pop-up window with a "Try Again" button, a JFrame and a JLabel.
-     *
-     * @param label The label in the pop-up window.
-     */
-    public void popUpRandom(JLabel label){
-        JButton btn = new JButton("Try Again");
-        JFrame frame1 = new JFrame("Error");
-        popUp(btn,frame1,label,300);
-
-        btn.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    frame1.dispose();
-                }
-            });
-
-        frame1.setVisible(true);
-    }
-
-    /**
-     * Display a pop-up with a given JButton, JFrame, JLabel, and width
-     *
-     * @param btn1 - the JButton to display on the pop-up
-     *
-     * @param frame2 - the JFrame to display the pop-up on
-     *
-     * @param text - the JLabel to display on the pop-up
-     *
-     * @param width - the width of the pop-up frame
-     */
-    public void popUp(JButton btn1, JFrame frame2 , JLabel text, int width){
-        PopUpFrame(frame2,width);
-        PopUpText(text);
-        btn(btn1);
-
-        JPanel panel = new JPanel();
-
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.add(Box.createVerticalGlue());
-        panel.add(text);
-        panel.add(Box.createVerticalStrut(10));
-        panel.add(btn1);
-
-        panel.add(Box.createVerticalGlue());
-        panel.setBackground(Color.cyan);
-
-        frame2.add(panel);
-    }
-
-    /**
-     * Set the size and location of a given JFrame for a pop-up
-     * @param frame - the JFrame to set the size and location of frame
-     * @param width - the desired width of the JFrame
-     */
-    public void PopUpFrame(JFrame frame ,int width){
-        frame.setSize(width, 200);
-        frame.setLocationRelativeTo(null);
-    }
-
-    /**
-     * Set the font and alignment of a given JLabel for a pop-up
-     * @param text - the JLabel to set the font and alignment of
-     */
-    public void PopUpText(JLabel text){
-        text.setFont(new Font("Serif", Font.PLAIN, 20));
-        text.setAlignmentX(Component.CENTER_ALIGNMENT);
     }
 
     /**
@@ -179,33 +119,40 @@ public class Edit {
      * @param b - a boolean indicating whether or not to display a user ID JTextField
      * @return the created registration panel as a JPanel
      */
-    public JPanel registration(JTextField textField2,JTextField textField3,JTextField textField4,
-    JTextField textField5,JFrame frame3,JButton btn3,JButton btn4,String name,boolean b){
+    public JPanel registration(JTextField textField2, JTextField textField3, JTextField textField4,
+                               JTextField textField5, JFrame frame3, JButton btn3, JButton btn4, String name, boolean b) {
         frame3.setSize(600, 500);
+        frame3.getRootPane().setBorder(BorderFactory.createLineBorder(accentColor, 2));
 
         JPanel panel = new JPanel();
         panel.removeAll();
+        panel.setBackground(backgroundColor);
+        panel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
 
         JLabel label = new JLabel(name);
-        label.setFont(new Font("Serif", Font.PLAIN, 40));
-        label.setAlignmentX(Component.CENTER_ALIGNMENT);
+        styleLabel(label);
+        label.setFont(new Font("Poppins", Font.BOLD, 40));
 
-        btnSmall(btn3,btn4);
+        btnSmall(btn3, btn4);
 
         JPanel button = new JPanel();
-        button.setBackground(Color.PINK);
+        button.setBackground(backgroundColor);
         button.add(btn3);
+        button.add(Box.createHorizontalStrut(20));
         button.add(btn4);
 
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBackground(Color.PINK);
         panel.add(label);
-        panel.add(Registration(textField2,textField3,textField4,textField5,b));
+        panel.add(Box.createVerticalStrut(30));
+        panel.add(Registration(textField2, textField3, textField4, textField5, b));
+        panel.add(Box.createVerticalStrut(20));
         panel.add(button);
+
         frame3.add(panel);
         frame3.setLocationRelativeTo(null);
         return panel;
     }
+
 
     /**
      * Generates a JPanel that contains text fields for registration details.
@@ -216,111 +163,46 @@ public class Edit {
      * @param b A boolean that specifies if the user ID field should be shown.
      * @return A JPanel that contains the registration details text fields
      */
-    public JPanel Registration(JTextField textField2,JTextField textField3,
-    JTextField textField4,JTextField textField5,boolean b){
+    public JPanel Registration(JTextField textField2, JTextField textField3,
+                               JTextField textField4, JTextField textField5, boolean b) {
         JPanel main = new JPanel();
+        main.setLayout(new BoxLayout(main, BoxLayout.Y_AXIS));
+        main.setBackground(backgroundColor);
+        main.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         if(b) {
-            JPanel textPanel = new JPanel();
-            JLabel textLabel = new JLabel("User ID");
-            textLabel.setFont(new Font("Serif", Font.PLAIN, 30));
-            textField2.setFont(new Font("Serif", Font.PLAIN, 30));
-            textField2.setPreferredSize(new Dimension(300, 50));
-            textPanel.add(textLabel);
-            textPanel.add(textField2);
-            textPanel.setLayout(new FlowLayout(FlowLayout.CENTER , 95, 10));
-            main.add(textPanel);
-            textPanel.setBackground(Color.lightGray);
+            addFormField(main, "User ID", textField2);
         }
 
-        JPanel textPanel2 = new JPanel();
-        JPanel textPanel3 = new JPanel();
-        JPanel textPanel4 = new JPanel();
+        addFormField(main, "User Name", textField3);
+        addFormField(main, "WorkPlace", textField4);
+        addFormField(main, "Home Town", textField5);
 
-        JLabel textLabel2 = new JLabel("User Name");
-        JLabel textLabel3 = new JLabel("WorkPlace");
-        JLabel textLabel4 = new JLabel("Home Town");
-
-        textLabel2.setFont(new Font("Serif", Font.PLAIN, 30));
-        textLabel3.setFont(new Font("Serif", Font.PLAIN, 30));
-        textLabel4.setFont(new Font("Serif", Font.PLAIN, 30));
-
-        textField3.setFont(new Font("Serif", Font.PLAIN, 30));
-        textField4.setFont(new Font("Serif", Font.PLAIN, 30));
-        textField5.setFont(new Font("Serif", Font.PLAIN, 30));
-
-        textField3.setPreferredSize(new Dimension(300, 50));
-        textField4.setPreferredSize(new Dimension(300, 50));
-        textField5.setPreferredSize(new Dimension(300, 50));
-
-        textPanel2.add(textLabel2);
-        textPanel2.add(textField3);
-        textPanel2.setLayout(new FlowLayout(FlowLayout.CENTER , 50, 10));
-
-        textPanel3.add(textLabel3);
-        textPanel3.add(textField4);
-        textPanel3.setLayout(new FlowLayout(FlowLayout.CENTER , 53, 10));
-
-        textPanel4.add(textLabel4);
-        textPanel4.add(textField5);
-        textPanel4.setLayout(new FlowLayout(FlowLayout.CENTER , 38, 10));
-
-        main.add(textPanel2);
-        main.add(textPanel3);
-        main.add(textPanel4);
-
-        main.setLayout(new BoxLayout(main, BoxLayout.Y_AXIS));
-
-        textPanel2.setBackground(Color.lightGray);
-        textPanel3.setBackground(Color.lightGray);
-        textPanel4.setBackground(Color.lightGray);
         return main;
     }
 
-    /**
-     * Validates the user registration inputs.
-     * @param textField1 The user ID text field.
-     * @param textField2 The user name text field.
-     * @param textField3 The workplace text field.
-     * @param textField4 The hometown text field.
-     * @param b A boolean that specifies if the user ID field should be shown.
-     * @return A character that indicates the validation
-     * result: 'a' if the ID is valid and does not exist in flie, 'b' if the inputs are valid, or 'c' otherwise.
-     */
-    public char inputValidation(JTextField textField1 ,JTextField textField2,
-    JTextField textField3,JTextField textField4,boolean b){
-        boolean valid = false;
-        int ID = 0;
-        String name;
-        String work;
-        String home;
-        try {
-            if(b) {
-                ID = Integer.parseInt(textField1.getText());
-            }
-            name = textField2.getText();
-            work = textField3.getText();
-            home = textField4.getText();
-            if(name.matches("[a-zA-Z]+") &&
-            work.matches("[a-zA-Z]+") &&
-            home.matches("[a-zA-Z]+")){
-                valid = true;
-            }
-        } catch (NumberFormatException nfe) {
-            //
-        }
-        boolean check = false;
-        if(b) {
-            check = graph.check(ID);
-        }
+    private void addFormField(JPanel panel, String labelText, JTextField field) {
+        JPanel fieldPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
+        fieldPanel.setBackground(backgroundColor);
 
-        if (valid && !check){
-            return 'a';
-        }else if(valid){
-            return 'b';
-        }else{
-            return 'c';
-        }
+        JLabel label = new JLabel(labelText);
+        label.setFont(new Font("Poppins", Font.PLAIN, 16));
+        label.setForeground(textColor);
+        label.setPreferredSize(new Dimension(120, 30));
+
+        field.setPreferredSize(new Dimension(300, 40));
+        field.setFont(new Font("Poppins", Font.PLAIN, 14));
+        field.setForeground(Color.WHITE);
+        field.setBackground(new Color(45, 45, 60));
+        field.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(accentColor),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+
+        fieldPanel.add(label);
+        fieldPanel.add(field);
+        panel.add(fieldPanel);
+        panel.add(Box.createVerticalStrut(10));
     }
 
     /**
@@ -354,49 +236,301 @@ public class Edit {
      * DO_NOTHING_ON_CLOSE and displays a confirmation dialog when the window is closed.
      * @param frame JFrame to be exited.
      */
-    public void WindowExit(JFrame frame){
+    public void WindowExit(JFrame frame) {
         frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         frame.addWindowListener(new WindowAdapter() {
-                public void windowClosing(WindowEvent e) {
-                    JButton yes = new JButton("Yeah");
-                    JButton no = new JButton("Noi");
-                    JFrame fm = new JFrame("Confirmation");
-                    yes.addActionListener(new ActionListener() {
-                            @Override
-                            public void actionPerformed(ActionEvent e) {
-                                if(e.getSource() == yes){
-                                    File file = new File(graph);
-                                    file.addToFile();
-                                    System.exit(0);
-                                }
-                            }
-                        });
-                    no.addActionListener(new ActionListener() {
-                            @Override
-                            public void actionPerformed(ActionEvent e) {
-                                if(e.getSource() == no){
-                                    fm.dispose();
-                                }
-                            }
-                        });
-                    JLabel label = new JLabel("Seriously Dude :-(");
-                    label.setFont(new Font("Serif", Font.PLAIN, 30));
-                    label.setAlignmentX(Component.CENTER_ALIGNMENT);
-                    fm.setSize(400, 170);
-                    fm.setLocationRelativeTo(null);
-                    btnSmall(yes,no);
-                    JPanel panel = new JPanel();
-                    panel.setBackground(Color.CYAN);
-                    panel.add(label);
-                    JPanel panel1 = new JPanel();
-                    panel1.setBackground(Color.cyan);
-                    panel1.add(yes);
-                    panel1.add(no);
-                    panel.add(panel1);
-                    fm.add(panel);
-                    fm.setVisible(true);
+            public void windowClosing(WindowEvent e) {
+                JButton yesButton = createStyledButton("Yes");
+                JButton noButton = createStyledButton("No");
+
+                JDialog confirmationDialog = new JDialog(frame, "Confirmation", true);
+                confirmationDialog.setSize(400, 135);
+                confirmationDialog.setLocationRelativeTo(frame);
+                confirmationDialog.setUndecorated(true);
+
+                JPanel mainPanel = new JPanel() {
+                    @Override
+                    protected void paintComponent(Graphics g) {
+                        super.paintComponent(g);
+                        Graphics2D g2d = (Graphics2D) g;
+                        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                        GradientPaint gradient = new GradientPaint(0, 0, new Color(25, 25, 35), 0, getHeight(), new Color(45, 45, 60));
+                        g2d.setPaint(gradient);
+                        g2d.fillRect(0, 0, getWidth(), getHeight());
+                    }
+                };
+                mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+                mainPanel.setBorder(BorderFactory.createLineBorder(new Color(147, 112, 219), 2));
+
+                JLabel label = new JLabel("Are you sure you want to exit?");
+                label.setAlignmentX(Component.CENTER_ALIGNMENT);
+                label.setForeground(Color.WHITE);
+                label.setFont(new Font("Arial", Font.BOLD, 16));
+                label.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
+
+                yesButton.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        if(e.getSource() == yesButton){
+                            File file = new File(graph);
+                            file.addToFile();
+                            System.exit(0);
+                        }
+                    }
+                });
+
+                noButton.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        confirmationDialog.dispose();
+                    }
+                });
+
+                JPanel buttonPanel = new JPanel();
+                buttonPanel.setOpaque(false);
+                buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 10));
+                buttonPanel.add(yesButton);
+                buttonPanel.add(noButton);
+
+                mainPanel.add(label);
+                mainPanel.add(buttonPanel);
+
+                confirmationDialog.add(mainPanel);
+                confirmationDialog.setVisible(true);
+            }
+        });
+    }
+
+    public JButton createStyledButton(String text) {
+        JButton button = new JButton(text);
+        button.setFocusPainted(false);
+        button.setFont(new Font("Arial", Font.BOLD, 14));
+        button.setForeground(Color.WHITE);
+        button.setBackground(new Color(72, 61, 139));
+        button.setBorder(new Border() {
+            @Override
+            public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(new Color(123, 104, 238));
+                g2d.setStroke(new BasicStroke(2));
+                int arcWidth = 20;
+                int arcHeight = 20;
+                int adjustedX = x + 1;  // Adjust x to leave space for stroke
+                int adjustedY = y + 1;  // Adjust y to leave space for stroke
+                int adjustedWidth = width - 3; // Adjust width to account for stroke
+                int adjustedHeight = height - 3; // Adjust height to account for stroke
+
+                g2d.drawRoundRect(adjustedX, adjustedY, adjustedWidth, adjustedHeight, arcWidth, arcHeight);
+            }
+
+
+            @Override
+            public Insets getBorderInsets(Component c) {
+                return new Insets(5, 10, 5, 10);
+            }
+
+            @Override
+            public boolean isBorderOpaque() {
+                return false;
+            }
+        });
+
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        button.setPreferredSize(new Dimension(100, 40));
+
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                button.setBackground(new Color(123, 104, 238));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                button.setBackground(new Color(72, 61, 139));
+            }
+        });
+
+        return button;
+    }
+
+    public JTextField createStyledTextField() {
+        JTextField field = new JTextField() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g;
+
+
+                // Paint rounded background
+                g2d.setColor(getBackground());
+                g2d.fillRoundRect(0, 0, getWidth()-1, getHeight()-1, 20, 20);
+
+                super.paintComponent(g);
+            }
+        };
+        return createStyledField(field);
+    }
+
+    public JPasswordField createStyledPasswordField() {
+        JPasswordField field = new JPasswordField() {
+            private boolean showPassword = false;
+            private final int iconSize = 20;
+            private final int padding = 10;
+            private ImageIcon openEyeIcon, closedEyeIcon;
+
+            {
+                try {
+                    // Load and scale icons
+                    BufferedImage openEyeImg = ImageIO.read(new URL("https://raw.githubusercontent.com/google/material-design-icons/master/png/action/visibility/materialicons/24dp/1x/baseline_visibility_black_24dp.png"));
+                    BufferedImage closedEyeImg = ImageIO.read(new URL("https://raw.githubusercontent.com/google/material-design-icons/master/png/action/visibility_off/materialicons/24dp/1x/baseline_visibility_off_black_24dp.png"));
+
+                    openEyeIcon = new ImageIcon(openEyeImg.getScaledInstance(iconSize, iconSize, Image.SCALE_SMOOTH));
+                    closedEyeIcon = new ImageIcon(closedEyeImg.getScaledInstance(iconSize, iconSize, Image.SCALE_SMOOTH));
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            });
+
+                addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        int x = e.getX();
+                        if (x >= getWidth() - iconSize - padding && x <= getWidth() - padding) {
+                            showPassword = !showPassword;
+                            setEchoChar(showPassword ? (char) 0 : '•');
+                            repaint();
+                        }
+                    }
+                });
+
+                addMouseMotionListener(new MouseMotionAdapter() {
+                    @Override
+                    public void mouseMoved(MouseEvent e) {
+                        int x = e.getX();
+                        if (x >= getWidth() - iconSize - padding && x <= getWidth() - padding) {
+                            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                        } else {
+                            setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
+                        }
+                    }
+                });
+            }
+
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setColor(getBackground());
+                g2d.fillRoundRect(0, 0, getWidth()-1, getHeight()-1, 20, 20);
+
+                super.paintComponent(g);
+                //Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                // Draw the eye icon
+                int iconX = getWidth() - iconSize - padding;
+                int iconY = (getHeight() - iconSize) / 2;
+
+                if (showPassword && openEyeIcon != null) {
+                    openEyeIcon.paintIcon(this, g2d, iconX, iconY);
+                } else if (closedEyeIcon != null) {
+                    closedEyeIcon.paintIcon(this, g2d, iconX, iconY);
+                }
+            }
+        };
+        field.setEchoChar('•');
+        final int arcSize = 20;  // Roundness control
+
+        field.setFont(new Font("Montserrat", Font.PLAIN, 14));
+        field.setForeground(Color.BLACK);
+        field.setOpaque(false);
+        field.setBorder(new Border() {
+            @Override
+            public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(primaryColor);
+                g2d.drawRoundRect(x, y, width-1, height-1, arcSize, arcSize);
+            }
+
+            @Override
+            public Insets getBorderInsets(Component c) {
+                return new Insets(5, 10, 5, 33);
+            }
+
+            @Override
+            public boolean isBorderOpaque() {
+                return false;
+            }
+        });
+        field.setBackground(Color.white);
+        return field;
+    }
+
+    // Common styling method for both text and password fields
+    private <T extends JTextField> T createStyledField(T field) {
+        final int arcSize = 20;  // Roundness control
+
+        field.setFont(new Font("Montserrat", Font.PLAIN, 14));
+        field.setForeground(Color.BLACK);
+        field.setOpaque(false);
+
+        field.setBorder(new Border() {
+            @Override
+            public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setColor(primaryColor);
+                g2d.drawRoundRect(x, y, width-1, height-1, arcSize, arcSize);
+            }
+
+            @Override
+            public Insets getBorderInsets(Component c) {
+                return new Insets(5, 10, 5, 10);
+            }
+
+            @Override
+            public boolean isBorderOpaque() {
+                return false;
+            }
+        });
+        field.setBackground(Color.white);
+        return field;
+    }
+
+    public JLabel createErrorLabel() {
+        JLabel label = new JLabel();
+        label.setFont(new Font("Montserrat", Font.ITALIC, 12));
+        label.setForeground(Color.RED);
+        label.setVisible(false);
+        label.setAlignmentX(Component.CENTER_ALIGNMENT);
+        return label;
+    }
+
+    public void showError(JLabel error, String message){
+        error.setText("<html><font color='red'>" + message + "</font></html>");
+        error.setVisible(true);
+
+        // Add shake animation for error
+        Timer shakeTimer = new Timer(50, new ActionListener() {
+            int count = 0;
+            int direction = 1;
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (count < 6) {
+                    error.setLocation(error.getX() + (5 * direction), error.getY());
+                    direction *= -1;
+                    count++;
+                } else {
+                    ((Timer)e.getSource()).stop();
+                }
+            }
+        });
+        shakeTimer.start();
+    }
+
+    public void styleLabel(JLabel label) {
+        label.setFont(new Font("Montserrat", Font.BOLD, 14));
+        label.setForeground(textColor);
+        label.setAlignmentX(Component.CENTER_ALIGNMENT);
     }
 
     /**
@@ -404,19 +538,41 @@ public class Edit {
      * @param name the name to be displayed in the label of the JPanel
      * @return a JPanel with a label containing the specified name
      */
-    public JPanel panel(String name){
-        JPanel panel = new JPanel();
-        panel.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED));
+    public JPanel panel(String name) {
+        JPanel panel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                GradientPaint gradient = new GradientPaint(
+                        0, 0, backgroundColor,
+                        getWidth(), getHeight(), primaryColor
+                );
+                g2d.setPaint(gradient);
+                g2d.fillRect(0, 0, getWidth(), getHeight());
+            }
+        };
 
-        JLabel label = new JLabel(name);
-        label.setFont(new Font("Serif", Font.PLAIN, 50));
-        label.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(accentColor, 2),
+                BorderFactory.createEmptyBorder(20, 20, 20, 20)
+        ));
+        panel.setLayout(new BorderLayout(10, 10)); // Use BorderLayout with gaps
 
-        panel.add(label);
-        panel.setBackground(Color.PINK);
-        panel.setLayout(new BoxLayout(panel,BoxLayout.Y_AXIS));
+        // Create the label
+        JLabel label = new JLabel(name, SwingConstants.CENTER); // Center-align text horizontally
+        label.setFont(new Font("Poppins", Font.BOLD, 40));
+        label.setForeground(textColor);
+
+        // Add the label to the top of the panel
+        panel.add(label, BorderLayout.NORTH);
+
+        // Ensure transparency is maintained
+        panel.setOpaque(false);
 
         return panel;
     }
+
 
 }
