@@ -5,7 +5,8 @@ Convo App is a Java-based social networking application with a graphical user in
 
 ## Demo Video
 
-<video src="https://github.com/SujalThakur1/Convo-App/raw/master/images/Convo.mp4" controls width="600"></video>
+<video src="https://github.com/user-attachments/assets/0859e432-da4c-4c57-bdaf-64166860fbf4"></video>
+
 
 ---
 
