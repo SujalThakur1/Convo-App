@@ -1,6 +1,14 @@
 Convo App - Social Networking Application
 Convo App is a Java-based social networking application with a graphical user interface (GUI) and a graph data structure to manage user profiles and connections. Follow the steps below to get started with the project.
 
+---
+
+## Demo Video
+
+<video src="https://github.com/SujalThakur1/Convo-App/tree/master/images/Convo.mp4" controls width="600"></video>
+
+---
+
 How to Start
 Clone the Repository:
 
